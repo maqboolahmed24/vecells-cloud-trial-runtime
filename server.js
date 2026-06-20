@@ -12910,11 +12910,11 @@ var defaultIntakeContentPack = {
         nextStepLabel: "Keep your contact details available in case the service needs more information."
       },
       urgent_diversion: {
-        heading: "Urgent next step",
-        summary: "This request has moved out of routine review so the service can handle the urgent next step.",
-        safetyLabel: "Urgent handling",
-        etaLabel: "Follow the urgent advice shown to you now.",
-        nextStepLabel: "Use urgent care or emergency services if the situation needs help now."
+        heading: "Urgent guidance",
+        summary: "This request needs urgent attention. Follow the guidance shown to you now.",
+        safetyLabel: "Urgent guidance",
+        etaLabel: "Follow the guidance shown to you now.",
+        nextStepLabel: "Use urgent care or emergency services if you need help now."
       },
       fallback_review: {
         heading: "Request sent for review",
@@ -12963,13 +12963,13 @@ var defaultIntakeContentPack = {
         nextSafeActionLabel: "View receipt"
       },
       urgent_diversion_required: {
-        heading: "Urgent next step",
-        body: "Follow the urgent advice shown for this request now.",
+        heading: "Urgent guidance",
+        body: "Follow the guidance shown for this request now.",
         nextSafeActionLabel: "Review urgent guidance"
       },
       urgent_diverted: {
-        heading: "Urgent handling started",
-        body: "The urgent next step has been issued. Use urgent care now if you need help before follow-up.",
+        heading: "Urgent guidance issued",
+        body: "Urgent guidance has been issued. Use urgent care now if you need help before follow-up.",
         nextSafeActionLabel: "Review urgent guidance"
       },
       fallback_review: {
@@ -20893,7 +20893,7 @@ var seedQueueRows = [
     rowRef: "row-task-1194",
     taskId: "task-1194",
     requestLabel: "Assigned request",
-    reasonSummary: "Another reviewer is handling this; read-only view is available.",
+    reasonSummary: "Another reviewer is handling this; a review summary is available.",
     priorityBand: "routine",
     dueLabel: "Due 16:40",
     elapsedLabel: "18m",
@@ -20914,7 +20914,7 @@ var seedQueueRows = [
     changedSinceSeen: true,
     changedSinceSeenLabel: "Updated since review",
     blockingReasonLabel: "Assigned to another reviewer",
-    nextActionLabel: "Open read-only"
+    nextActionLabel: "Open review"
   }
 ];
 
@@ -21097,7 +21097,7 @@ var scenarioTemplates = {
     transcriptSummary: "Recording pending.",
     continuationSummary: "Text link unavailable.",
     manualReviewSummary: "Clinical review available after urgent handling.",
-    supportAssistedSummary: "Send to worklist after details are checked.",
+    supportAssistedSummary: "Create request after details are checked.",
     steps: ["call_started", "menu_selected", "urgent_prompt_played", "urgent_signal_captured"]
   },
   recording_ready_transcript_pending: {
@@ -21120,7 +21120,7 @@ var scenarioTemplates = {
     transcriptSummary: "Details still preparing.",
     continuationSummary: "Text link unavailable.",
     manualReviewSummary: "Clinical review available if needed.",
-    supportAssistedSummary: "Send to worklist after details are checked.",
+    supportAssistedSummary: "Create request after details are checked.",
     steps: ["call_started", "menu_selected", "identity_hint_captured", "recording_ready", "transcript_pending"]
   },
   transcript_failed_manual_review: {
@@ -21166,7 +21166,7 @@ var scenarioTemplates = {
     transcriptSummary: "Call details ready.",
     continuationSummary: "Text link is eligible and current.",
     manualReviewSummary: "Clinical review not required.",
-    supportAssistedSummary: "Send to worklist if the text link cannot continue.",
+    supportAssistedSummary: "Create request if the text link cannot continue.",
     steps: [
       "call_started",
       "menu_selected",
@@ -21203,7 +21203,7 @@ var scenarioTemplates = {
   staff_assisted_request_seeded: {
     publicId: "TC-SEEDED",
     title: "Live intake",
-    summary: "Ready for worklist.",
+    summary: "Ready to create request.",
     callState: "request_seeded",
     verificationState: "verified",
     recordingAvailabilityState: "verified",
@@ -21216,11 +21216,11 @@ var scenarioTemplates = {
     callerVerificationSummary: "Caller verified.",
     urgentSignalSummary: "No urgent signal is active for this call.",
     structuredCaptureSummary: "Call notes complete.",
-    evidenceReadinessSummary: "Ready for worklist.",
+    evidenceReadinessSummary: "Ready to create request.",
     transcriptSummary: "Call details ready.",
-    continuationSummary: "Text link is not needed because the intake can be sent to the worklist now.",
+    continuationSummary: "Text link is not needed because the intake can create a request now.",
     manualReviewSummary: "Clinical review not required.",
-    supportAssistedSummary: "Ready for worklist.",
+    supportAssistedSummary: "Ready to create request.",
     steps: ["call_started", "menu_selected", "identity_hint_captured", "recording_ready", "transcript_ready", "request_seeded"]
   }
 };
@@ -21378,15 +21378,15 @@ function actionLabel(commandName) {
     case "save-live-intake-capture":
       return "Save call notes";
     case "check-transcript":
-      return "Check call details";
+      return "Check details";
     case "issue-continuation":
       return "Send text link";
     case "route-manual-review":
       return "Send to review";
     case "seed-request":
-      return "Send to worklist";
+      return "Create request";
     case "abandon-call":
-      return "Close, no action needed";
+      return "Close call";
     default:
       return labelForState(commandName);
   }
@@ -21483,7 +21483,7 @@ function timelineLabel(kind) {
     case "secure_link_issued":
       return "Text link sent";
     case "request_seeded":
-      return "Ready for worklist";
+      return "Ready to create request";
     case "manual_review_required":
       return "Clinical review opened";
   }
@@ -21620,7 +21620,7 @@ function labelForState(state) {
     case "ready_to_promote":
       return "Ready";
     case "request_seeded":
-      return "Ready for worklist";
+      return "Ready to create request";
     case "eligible_seeded":
       return "Continuation ready";
     case "eligible_challenge":
@@ -21686,7 +21686,7 @@ function routeActionAvailabilityLabel(routeWritability) {
 }
 function routeActionUnavailableReason(routeWritability) {
   if (routeWritability === "read_only") {
-    return "This view is review-only.";
+    return "Actions are not available in this view.";
   }
   if (routeWritability === "recovery_only") {
     return "Recheck this view before changing this call.";
@@ -22135,7 +22135,7 @@ function patientContinuityWorkspaceFor(route, routeWritability, selectedAnchorRe
     statusItems: [
       { label: "Active patients", value: `${patients.length}`, tone: patients.length > 0 ? "ready" : "neutral" },
       { label: "Messages", value: "Profiles", tone: "ready" },
-      { label: "Scope", value: "Recent activity", tone: "watch" }
+      { label: "View", value: "Recent activity", tone: "watch" }
     ],
     patients,
     ...selectedPatient ? { selectedPatient } : {},
@@ -22183,7 +22183,7 @@ function patientContinuityProfileFor(patient, routeWritability) {
     practiceLabel: patient.practiceLabel,
     contextLabel: `Recent request - ${patient.practiceLabel}`,
     safeSummary: "Recent care-team activity is ready for review.",
-    boundaryNotice: "Recent activity only.",
+    boundaryNotice: "Recent activity",
     contactPreferenceLabel: patientContactPreferenceLabel(patient.contactPreferences.preferredContactMethod),
     currentStatusLabel: patient.patientId === "maqbool" ? "Reply returned" : patient.patientId === "zaeem" ? "Message ready" : "No urgent alerts",
     demographics: patientContinuityDemographics(patient),
@@ -22369,11 +22369,11 @@ function approvalWorkspaceFor(home, routeWritability, selectedAnchorRef) {
       approvalRef: "approval-checkpoint-endpoint",
       taskId: home.approvalWork[0]?.taskRef ?? "task-1088",
       requestLabel: "Decision pending",
-      summary: "Outcome review is ready, but supervisor approval must confirm consequence and scope before confirmation.",
+      summary: "Outcome is ready; supervisor approval is needed before confirmation.",
       endpointLabel: "Urgent escalation",
       requiredRoleLabel: "Supervisor checkpoint",
       dueLabel: "Due 15:20",
-      riskLabel: "High consequence",
+      riskLabel: "High impact",
       routeHref: hrefForWorkspaceRoute("workspaceDecision", { taskId: "task-approval" }),
       primaryCommandName: "approve",
       secondaryCommandNames: ["escalate", "release"],
@@ -22405,7 +22405,7 @@ function approvalWorkspaceFor(home, routeWritability, selectedAnchorRef) {
     blockedCount: routeWritability === "writable" ? 0 : items.length,
     statusItems: [
       { label: "Waiting", value: `${items.length}`, tone: "ready" },
-      { label: "Scope", value: routeWritability === "writable" ? "Supervisor live" : "Read-only", tone: routeWritability === "writable" ? "ready" : "watch" },
+      { label: "View", value: routeWritability === "writable" ? "Supervisor access" : "Review only", tone: routeWritability === "writable" ? "ready" : "watch" },
       { label: "Oldest due", value: items[0]?.dueLabel ?? "None", tone: "urgent" }
     ],
     items,
@@ -22508,7 +22508,7 @@ function escalationWorkspaceItem(input) {
 }
 function escalationDisabledReasonFor(routeWritability) {
   if (routeWritability === "read_only") {
-    return "Escalation actions are read-only until access is rechecked.";
+    return "Escalation actions are review only until access is rechecked.";
   }
   if (routeWritability === "recovery_only") {
     return "Escalation actions are held while access recheck is required.";
@@ -22536,7 +22536,7 @@ function queueProjectionFor(queueKey, workspaceTrustEnvelopeRef, context = {}) {
     queueHealthDigest: empty ? "No work is waiting in this saved view." : `${queueLabelFor(safeQueueKey)} has ${rows.length} ${rows.length === 1 ? "request" : "requests"} ready for review.`,
     queueChangeBatchRef: empty ? `queue-change-batch-${safeQueueKey}-none` : `queue-change-batch-${safeQueueKey}-buffered`,
     batchChangeState: empty ? "none" : "buffered",
-    batchChangeLabel: empty ? "No live worklist changes are waiting for this saved view." : "Updates pause while reviewing.",
+    batchChangeLabel: empty ? "No live worklist changes are waiting for this saved view." : "Updates held while you review.",
     generatedAt: "Today 14:05"
   };
 }
@@ -22794,8 +22794,8 @@ function changedQueueRows() {
         reasonSummary: "Assignment changed; review before any transfer.",
         queueExplanation: "Owner updated",
         rankExplanation: "Active reviewer continues.",
-        fairnessSignal: "Read-only recheck avoids interrupting another reviewer.",
-        nextActionLabel: "Open read-only"
+        fairnessSignal: "Review only recheck avoids interrupting another reviewer.",
+        nextActionLabel: "Open review"
       };
     }
     return row;
@@ -22813,7 +22813,7 @@ function approvalQueueRows() {
       elapsedLabel: "1h 08m",
       queueExplanation: "Approval review",
       rankExplanation: "Approval is the next step.",
-      fairnessSignal: "Approval work is ordered by due time and consequence.",
+      fairnessSignal: "Approvals are ordered by due time and clinical impact.",
       nextActionLabel: "Approve"
     }),
     routeWorkspaceQueueRow({
@@ -22875,8 +22875,8 @@ function routeWorkspaceQueueRow(input) {
     fairnessSignal: input.fairnessSignal,
     leaseAvailability: {
       state: "read_only",
-      label: "Open here",
-      detail: "Open here to continue."
+      label: "Ready",
+      detail: "Ready to continue."
     },
     claimPosture: {
       state: "read_only",
@@ -23670,7 +23670,7 @@ function duplicateRoutePostureFor(posture) {
     case "conservative":
       return "Related-request actions use the current checked details.";
     case "read_only":
-      return "This view is review-only, so related-request decisions cannot change the request.";
+      return "This summary is for review, so related-request decisions cannot change the request.";
     case "recovery_required":
       return "Recheck this review before making a related-request decision.";
     case "blocked":
@@ -24054,7 +24054,7 @@ function taskProjectionFor(route, taskId, queueKey, trustEnvelope) {
       {
         itemKey: "identity",
         label: "Identity checked",
-        summary: "Identity confidence is sufficient for staff review without expanding demographic detail.",
+        summary: "Identity check is complete for staff review.",
         state: "complete",
         occurredAtLabel: "Today 14:05"
       },
@@ -24110,7 +24110,7 @@ function taskProjectionFor(route, taskId, queueKey, trustEnvelope) {
     patientNarrative: taskId === "task-1042" ? "Maqbool reports symptoms have changed since the first request and asks for advice before the end of the day." : "Patient reports symptoms have changed since the first request and asks for advice before the end of the day.",
     attachmentDigest: "Two supporting files are summarised for review.",
     communicationDigest: taskId === "task-1042" ? "SMS is available. No message has been sent to Maqbool from this review." : "SMS contact method available. No patient message has been sent from this review.",
-    identityDigest: "Identity confidence is sufficient for staff review. No demographic detail is expanded on this review screen.",
+    identityDigest: "Identity check is complete. Patient details stay protected in this review.",
     duplicateDigest: duplicateReview.active ? duplicateReview.summary : "Possible related request is separated for now; reviewer can compare later.",
     safetyDigest: safetyInterrupt.active ? safetyInterrupt.summary : "Routine state is not assumed until the returned details are rechecked.",
     evidenceDiffDigest: safetyInterrupt.active ? safetyInterrupt.evidenceDelta.deltaLabel : "Returned details may change the next step. Final actions are paused.",
@@ -24252,14 +24252,14 @@ function reviewEvidenceTimelineFor(input) {
       groupKey: "identity",
       sourceKind: "identity_signal",
       label: "Identity check",
-      summary: "Identity confidence is sufficient for staff review.",
+      summary: "Identity check is complete for staff review.",
       occurredAtLabel: "Today 14:01",
       materiality: "identity_review",
       artifactState: "summary_only",
       selectedAnchorRef: input.selectedAnchorRef,
       safeSourceRefs: ["identity-authority-record:current", "patient-link:current"],
       detailTitle: "Identity check",
-      safeFacts: ["Identity confidence is sufficient", "Demographic detail is collapsed", "Staff review only"],
+      safeFacts: ["Identity checked", "Patient details protected", "Staff review only"],
       sourceSummary: "Identity status is current.",
       parityLabel: "Identity summary current",
       freshnessLabel: "No repair required",
@@ -24790,7 +24790,7 @@ function selfCareAdviceBundleLabelFor(seedState) {
       return "Advice bundle is held behind approval.";
     case "recovery_required":
     case "blocked":
-      return "Advice bundle is read-only until review recovers.";
+      return "Advice bundle is review only until review recovers.";
     case "draft_intent":
       return "Advice bundle variant is ready for checked review.";
     case "not_applicable":
@@ -24811,7 +24811,7 @@ function selfCarePatientSafeSummaryFor(seedState) {
       return "Patient advice waits for the final result before issue.";
     case "recovery_required":
     case "blocked":
-      return "Patient advice is read-only.";
+      return "Patient advice is review only.";
     case "draft_intent":
       return "Short public summary is checked without creating patient-facing advice.";
     case "not_applicable":
@@ -24828,7 +24828,7 @@ function selfCareSafetyNetLinesFor(seedState) {
   }
   if (seedState === "recovery_required" || seedState === "blocked") {
     return [
-      "Keep advice read-only during review.",
+      "Keep advice review only during review.",
       "Use this review to recheck before any patient-facing issue.",
       "Escalate if informational advice is no longer sufficient."
     ];
@@ -25197,7 +25197,7 @@ function adminResolutionPatientEffectFor(seedState) {
       return "Patient-visible update waits for the final result before issue.";
     case "recovery_required":
     case "blocked":
-      return "Patient-visible update is read-only.";
+      return "Patient-visible update is review only.";
     case "approval_required":
       return "Approval needed before patient update.";
     case "draft_intent":
@@ -25252,7 +25252,7 @@ function adminResolutionDependencyLabelFor(seedState, followUpRequired) {
     return "No follow-up clinical work is required for this administrative outcome.";
   }
   if (seedState === "publication_recovery_required" || seedState === "recovery_required" || seedState === "blocked") {
-    return "Dependencies are read-only while recheck or blocking state is active.";
+    return "Dependencies are review only while recheck or blocking state is active.";
   }
   return "Dependency state waits for the final result.";
 }
@@ -25809,7 +25809,7 @@ function callbackPatientVisiblePromiseFor(seedState) {
       return "Patient-facing callback promise waits for the final result.";
     case "recovery_required":
     case "blocked":
-      return "Callback promise is read-only.";
+      return "Callback promise is review only.";
     case "draft_intent":
       return "Patient-facing callback expectation waits until the outcome is confirmed.";
     case "not_applicable":
@@ -25832,7 +25832,7 @@ function callbackAttemptPolicyFor(seedState) {
     return "Reachability check needed before attempts.";
   }
   if (seedState === "recovery_required" || seedState === "blocked") {
-    return "Attempt plan is read-only.";
+    return "Attempt plan is review only.";
   }
   return "Two checked attempts inside the expectation window before repair or escalation review.";
 }
@@ -25849,7 +25849,7 @@ function callbackExpectedWindowFor(seedState) {
       return "Expected window waits for the final result.";
     case "recovery_required":
     case "blocked":
-      return "Expected window is read-only.";
+      return "Expected window is review only.";
     case "draft_intent":
       return "Expected callback window: today 16:00-18:00.";
     case "not_applicable":
@@ -26076,7 +26076,7 @@ function endpointDecisionOptionsFor(selectedOptionKey, state) {
     {
       optionKey: "booking",
       label: "Booking options",
-      summary: "Appointment support is available.",
+      summary: "Appointment options are ready.",
       consequenceSummary: "Booking details remain in review until an appointment is confirmed.",
       safeOutcomeBullets: consequenceBulletsFor("booking"),
       downstreamPreviewLabel: "Booking options",
@@ -26106,7 +26106,7 @@ function endpointDecisionOptionsFor(selectedOptionKey, state) {
     {
       optionKey: "urgent_escalation",
       label: "Urgent escalation",
-      summary: "Prepare urgent escalation using the current safety review.",
+      summary: "Prepare urgent escalation from this review.",
       consequenceSummary: "Escalation remains explicit and approval-gated where required.",
       safeOutcomeBullets: consequenceBulletsFor("urgent_escalation"),
       downstreamPreviewLabel: "Escalation path",
@@ -28471,7 +28471,7 @@ async function registerIntakeSubmitRoutes(app, dependencies) {
     }
   );
   app.get(
-    "/v1/intake/requests/:requestPublicId(^[A-Za-z0-9._-]+)/receipt",
+    "/v1/intake/requests/:requestPublicId(^[A-Za-z0-9._:-]+)/receipt",
     async (request, reply) => {
       const requestBinding = dependencies.patientWebSessionAuthService.requireRequestBinding(request.headers);
       const authority = dependencies.patientWebSessionAuthService.requireRequestReadAuthority(request.headers, requestBinding);
@@ -28483,7 +28483,7 @@ async function registerIntakeSubmitRoutes(app, dependencies) {
     }
   );
   app.get(
-    "/v1/intake/requests/:requestPublicId(^[A-Za-z0-9._-]+)/status",
+    "/v1/intake/requests/:requestPublicId(^[A-Za-z0-9._:-]+)/status",
     async (request, reply) => {
       const requestBinding = dependencies.patientWebSessionAuthService.requireRequestBinding(request.headers);
       const authority = dependencies.patientWebSessionAuthService.requireRequestReadAuthority(request.headers, requestBinding);
@@ -42656,7 +42656,7 @@ async function applySearchWorkspaceOverlay(projection, repository, liveIntakeRep
           tone: results.length > 0 ? "ready" : "watch"
         },
         {
-          label: "Scope",
+          label: "View",
           value: "Intake work",
           tone: "ready"
         },
@@ -55782,9 +55782,10 @@ var DefaultFallbackSafetyScreeningPort = class {
 };
 var FixtureBackedReceiptStatusProjectionPort = class {
   linksForSettlement(input) {
+    const requestPublicId = encodeURIComponent(input.requestPublicId);
     return {
-      receiptHref: `/v1/intake/requests/${input.requestPublicId}/receipt`,
-      statusHref: `/v1/intake/requests/${input.requestPublicId}/status`
+      receiptHref: `/v1/intake/requests/${requestPublicId}/receipt`,
+      statusHref: `/v1/intake/requests/${requestPublicId}/status`
     };
   }
 };
@@ -64151,7 +64152,7 @@ function networkOfferEntries(scenario2, offerSessionId) {
       coverageRole: "diversity_fill",
       recommendationState: "neutral",
       selectionState: stateForSecond,
-      reason: "Included so you can choose a remote option in the same safe window.",
+      reason: "Included so you can choose a remote option before the offer closes.",
       generatedAt: "Today 14:10"
     }
   ];
@@ -70538,11 +70539,11 @@ var registeredDynamicRouteMethods = [
     methods: ["POST"]
   },
   {
-    pattern: /^\/v1\/intake\/requests\/[A-Za-z0-9._-]+\/receipt$/u,
+    pattern: /^\/v1\/intake\/requests\/[A-Za-z0-9._:-]+\/receipt$/u,
     methods: ["GET"]
   },
   {
-    pattern: /^\/v1\/intake\/requests\/[A-Za-z0-9._-]+\/status$/u,
+    pattern: /^\/v1\/intake\/requests\/[A-Za-z0-9._:-]+\/status$/u,
     methods: ["GET"]
   },
   {

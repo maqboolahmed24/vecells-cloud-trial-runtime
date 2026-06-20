@@ -11433,6 +11433,11 @@ var gatewayConfigSchema = {
       key: "API_GATEWAY_DEMO_PATIENT_MESSAGE_PERSISTENCE_FILE",
       parser: configString({ maxLength: 1024 }),
       defaultValue: ""
+    },
+    patientProfilePersistenceFile: {
+      key: "API_GATEWAY_PATIENT_PROFILE_PERSISTENCE_FILE",
+      parser: configString({ maxLength: 1024 }),
+      defaultValue: ""
     }
   }
 };
@@ -12879,7 +12884,7 @@ var defaultIntakeContentPack = {
     frozenActionLabel: "Resume request",
     urgentDiversion: {
       heading: "We need to handle this urgently",
-      body: "Your request has moved out of routine review so the service can arrange urgent follow-up.",
+      body: "Your request has moved out of routine review so the care team can arrange urgent follow-up.",
       actionLabel: "Check request status",
       whatToDoNow: "Keep your phone available and use urgent care now if you feel unsafe or symptoms worsen.",
       whatNotToWaitFor: "Do not wait for a routine update if you need urgent help now."
@@ -12888,8 +12893,8 @@ var defaultIntakeContentPack = {
   fallbackReview: {
     open: {
       heading: "We need to review this request",
-      body: "We have kept your request and sent it for review because the online checks could not safely finish.",
-      whatHappensNext: "The service will review it and contact you if they need more information.",
+      body: "We have kept your request and sent it for review because the online checks could not finish.",
+      whatHappensNext: "The care team will review it and contact you if they need more information.",
       dominantActionLabel: "Check request status"
     }
   },
@@ -12899,15 +12904,15 @@ var defaultIntakeContentPack = {
         heading: "Request sent",
         summary: "Your request has been received and is waiting for the care team.",
         safetyLabel: "Online checks completed",
-        etaLabel: "The service will usually review this within 2 working days.",
+        etaLabel: "The care team will usually review this within 2 working days.",
         nextStepLabel: "Use the status link if you want to check progress later."
       },
       residual_review: {
         heading: "Request received for review",
         summary: "Your request has been received and will be reviewed before routine handling continues.",
         safetyLabel: "Extra review included",
-        etaLabel: "The service will review this as part of normal request review.",
-        nextStepLabel: "Keep your contact details available in case the service needs more information."
+        etaLabel: "The care team will review this as part of normal request review.",
+        nextStepLabel: "Keep your contact details available in case the care team needs more information."
       },
       urgent_diversion: {
         heading: "Urgent guidance",
@@ -12918,16 +12923,16 @@ var defaultIntakeContentPack = {
       },
       fallback_review: {
         heading: "Request sent for review",
-        summary: "Your request has been kept and sent for review because the online checks could not safely finish.",
+        summary: "Your request has been kept and sent for review because the online checks could not finish.",
         safetyLabel: "Review needed",
-        etaLabel: "The service will review the request before it enters routine handling.",
+        etaLabel: "The care team will review the request before it enters routine handling.",
         nextStepLabel: "Use the status link to check whether anything else is needed."
       }
     },
     freshness: {
       current: "Receipt is up to date",
       stale: "Receipt needs a recheck",
-      recoveryRequired: "Receipt recovery is needed",
+      recoveryRequired: "Receipt needs a refresh",
       superseded: "A newer receipt is available"
     },
     referenceHeading: "Tracking reference",
@@ -12974,7 +12979,7 @@ var defaultIntakeContentPack = {
       },
       fallback_review: {
         heading: "Request sent for review",
-        body: "Your request has been kept and sent for review because online checks could not safely finish.",
+        body: "Your request has been kept and sent for review because online checks could not finish.",
         nextSafeActionLabel: "View receipt"
       },
       stale: {
@@ -12983,8 +12988,8 @@ var defaultIntakeContentPack = {
         nextSafeActionLabel: "Check again"
       },
       recovery_required: {
-        heading: "Status recovery needed",
-        body: "We need to recheck this status before showing ordinary controls.",
+        heading: "Update needed",
+        body: "We need to refresh this page before showing the latest update.",
         nextSafeActionLabel: "Get help"
       }
     },
@@ -12997,7 +13002,7 @@ var defaultIntakeContentPack = {
     freshness: {
       current: "Status is up to date",
       stale: "Status needs a recheck",
-      recoveryRequired: "Status recovery is needed"
+      recoveryRequired: "Help needed"
     }
   },
   recovery: {
@@ -13021,14 +13026,14 @@ var defaultIntakeContentPack = {
         secondaryActionLabel: "Start again"
       },
       invalid_token: {
-        heading: "We need to recover this journey",
-        body: "The app could not continue from the link or page you opened. You can start again without showing hidden service details.",
+        heading: "Start again",
+        body: "We could not continue from the link or page you opened. You can start again without showing private details.",
         actionLabel: "Start again",
         secondaryActionLabel: "Return home"
       },
       channel_frozen: {
         heading: "Resume request",
-        body: "This request cannot accept changes from this view right now.",
+        body: "This request cannot be changed from here right now.",
         actionLabel: "Resume request",
         secondaryActionLabel: "Start again"
       },
@@ -13045,8 +13050,8 @@ var defaultIntakeContentPack = {
         secondaryActionLabel: "Start again"
       },
       recovery_required: {
-        heading: "This page needs a safe restart",
-        body: "The app could not continue from the link or page you opened. You can start again without showing hidden service details.",
+        heading: "Start again",
+        body: "We could not continue from the link or page you opened. You can start again without showing private details.",
         actionLabel: "Start again",
         secondaryActionLabel: "Return home"
       }
@@ -16668,7 +16673,7 @@ function staffSlotComparisonProjection(input) {
         rankCueRef: `rank-cue:${slotRefFragment(slot.slotRef)}`,
         reservationTruth: {
           label: slot.reservationTruthLabel,
-          detail: slot.access === "patient_self_service" ? "Patient can book while available." : "Booking support must confirm.",
+          detail: slot.access === "patient_self_service" ? "Patient can book while available." : "Booking support needs to confirm.",
           truthState: input.scenario.surfaceState === "supplier_pending" ? "pending_confirmation" : "truthful_nonexclusive",
           countdownMode: "none"
         },
@@ -22195,7 +22200,7 @@ function isSupervisorScopeRef(roleScopeRef) {
 }
 function patientContinuitySummaryFor(patient, index) {
   const tone = patientContinuityTone(index);
-  const nextActionLabel = patient.patientId === "maqbool" ? "Review returned reply" : patient.patientId === "george" ? "Check callback plan" : patient.patientId === "zaeem" ? "Prepare message" : "Open profile";
+  const nextActionLabel = patient.patientId === "maqbool" ? "Review reply" : patient.patientId === "george" ? "Check callback plan" : patient.patientId === "zaeem" ? "Prepare message" : "Open profile";
   return {
     patientRef: patient.patientRef,
     patientId: patient.patientId,
@@ -27210,6 +27215,20 @@ function isPatientRouteKey(value) {
 function isRouteParamRecord(value) {
   return isRecordValue(value) && Object.keys(value).length <= 8 && Object.values(value).every((entry) => typeof entry === "string" && entry.length <= 180);
 }
+function isPatientRequestPublicRouteParam(value) {
+  return isSafePublicRef(value) && value.startsWith("trk_");
+}
+function isPatientRoutePathBoundToParams(key, path, params) {
+  if (key === "requestReceipt") {
+    const requestPublicId = params.requestPublicId;
+    return isPatientRequestPublicRouteParam(requestPublicId) && path === `/request/${encodeURIComponent(requestPublicId)}/receipt`;
+  }
+  if (key === "status") {
+    const trackingRef = params.trackingRef;
+    return isPatientRequestPublicRouteParam(trackingRef) && path === `/status/${encodeURIComponent(trackingRef)}`;
+  }
+  return true;
+}
 function isOptionalShortRouteParam(value) {
   return value === void 0 || typeof value === "string" && value.length > 0 && value.length <= 180;
 }
@@ -27381,7 +27400,7 @@ function isPatientPortalNavigationProjection(value) {
   ]) && isSafePublicRef(value.patientPortalNavigationProjectionId) && isSafePublicRef(value.patientShellContinuityKey) && isSafePublicRef(value.routeFamilyRef) && isSafePublicRef(value.selectedSectionRef) && isSafePublicRef(value.selectedAnchorRef) && isSafePublicRef(value.selectedAnchorBindingRef) && isPatientRouteMatch(value.safeDestinationRoute) && isPatientReturnTargetProjection(value.returnTarget) && isOneOf(value.routeIntentState, patientPortalRouteIntentStates) && isOneOf(value.releaseFreezePosture, patientReleaseFreezePostures) && isOneOf(value.channelReleaseFreezeState, patientChannelReleaseFreezeStates) && isSafeStringArray(value.requiredAssuranceSliceTrustRefs) && typeof value.writableActionAllowed === "boolean" && isPatientActionProjection(value.dominantAction) && isPatientActionProjection(value.recoveryAction) && typeof value.computedAt === "string" && isIsoDateTime(value.computedAt);
 }
 function isPatientRouteMatch(value) {
-  return isRecordValue(value) && hasOnlyRecordKeys15(value, ["key", "path", "params"]) && isPatientRouteKey(value.key) && typeof value.path === "string" && value.path.startsWith("/") && !value.path.startsWith("//") && value.path.length <= 240 && isRouteParamRecord(value.params);
+  return isRecordValue(value) && hasOnlyRecordKeys15(value, ["key", "path", "params"]) && isPatientRouteKey(value.key) && typeof value.path === "string" && value.path.startsWith("/") && !value.path.startsWith("//") && value.path.length <= 240 && isRouteParamRecord(value.params) && isPatientRoutePathBoundToParams(value.key, value.path, value.params);
 }
 function isPatientRouteProjectionRequest(value) {
   return isRecordValue(value) && hasOnlyRecordKeys15(value, [
@@ -27408,6 +27427,92 @@ function isPatientRouteSectionProjection(value) {
 }
 function isPatientCasePulseStepProjection(value) {
   return isRecordValue(value) && hasOnlyRecordKeys15(value, ["label", "state", "detail"]) && typeof value.label === "string" && typeof value.detail === "string" && (value.state === "complete" || value.state === "current" || value.state === "next" || value.state === "attention");
+}
+function isPatientProjectionRequestPublicId(value) {
+  return isPatientRequestPublicRouteParam(value);
+}
+function isPatientShellReceiptHref(value, requestPublicId) {
+  return value === `/request/${encodeURIComponent(requestPublicId)}/receipt`;
+}
+function isPatientShellStatusHref(value, requestPublicId) {
+  return value === `/status/${encodeURIComponent(requestPublicId)}`;
+}
+function isPatientProjectionLinkBoundToRequest(href, requestPublicId) {
+  if (href.startsWith("/request/") || href.startsWith("/status/")) {
+    return isPatientShellReceiptHref(href, requestPublicId) || isPatientShellStatusHref(href, requestPublicId);
+  }
+  return !href.startsWith("/v1/intake/requests/");
+}
+function isPatientProjectionReceiptAction(value, requestPublicId) {
+  return isRecordValue(value) && hasOnlyRecordKeys15(value, ["label", "href", "tone"]) && typeof value.label === "string" && value.label.length > 0 && value.label.length <= 80 && isSafeHref(value.href) && isPatientProjectionLinkBoundToRequest(value.href, requestPublicId) && (value.tone === "primary" || value.tone === "supportive" || value.tone === "caution");
+}
+function isPatientProjectionStatusAction(value, requestPublicId) {
+  return isPatientProjectionReceiptAction(value, requestPublicId);
+}
+function isPatientProjectionFreshnessView(value, states) {
+  return isRecordValue(value) && hasOnlyRecordKeys15(value, ["state", "label", "checkedAtLabel"]) && typeof value.state === "string" && states.includes(value.state) && typeof value.label === "string" && value.label.length > 0 && value.label.length <= 160 && typeof value.checkedAtLabel === "string" && isIsoDateTime(value.checkedAtLabel);
+}
+function isPatientProjectionSafeSummary(value) {
+  return isRecordValue(value) && hasOnlyRecordKeys15(value, ["requestType", "requestTypeLabel", "summaryLines", "attachmentSummary", "contactPreferenceSummary"]) && (value.requestType === null || typeof value.requestType === "string" && value.requestType.length > 0 && value.requestType.length <= 80) && typeof value.requestTypeLabel === "string" && value.requestTypeLabel.length > 0 && value.requestTypeLabel.length <= 160 && Array.isArray(value.summaryLines) && value.summaryLines.length <= 12 && value.summaryLines.every((item) => typeof item === "string" && item.length > 0 && item.length <= 280) && isRecordValue(value.attachmentSummary) && hasOnlyRecordKeys15(value.attachmentSummary, ["count", "state", "label"]) && typeof value.attachmentSummary.count === "number" && Number.isSafeInteger(value.attachmentSummary.count) && value.attachmentSummary.count >= 0 && (value.attachmentSummary.state === "none" || value.attachmentSummary.state === "present" || value.attachmentSummary.state === "unavailable" || value.attachmentSummary.state === "recovery_required") && typeof value.attachmentSummary.label === "string" && value.attachmentSummary.label.length > 0 && value.attachmentSummary.label.length <= 160 && typeof value.contactPreferenceSummary === "string" && value.contactPreferenceSummary.length > 0 && value.contactPreferenceSummary.length <= 280;
+}
+function isPatientProjectionReceiptArtifact(value) {
+  return isRecordValue(value) && hasOnlyRecordKeys15(value, ["artifactState", "title", "summary", "presentationContractRef"]) && (value.artifactState === "summary_only" || value.artifactState === "inline_renderable" || value.artifactState === "recovery_only") && typeof value.title === "string" && value.title.length > 0 && value.title.length <= 160 && typeof value.summary === "string" && value.summary.length > 0 && value.summary.length <= 280 && (value.presentationContractRef === void 0 || isSafePublicRef(value.presentationContractRef));
+}
+function isPatientProjectionReceiptStatusStrip(value) {
+  return isRecordValue(value) && hasOnlyRecordKeys15(value, ["label", "detail", "state"]) && typeof value.label === "string" && value.label.length > 0 && value.label.length <= 160 && typeof value.detail === "string" && value.detail.length > 0 && value.detail.length <= 180 && (value.state === "settled" || value.state === "pending" || value.state === "delayed" || value.state === "recovery" || value.state === "blocked");
+}
+function isPatientProjectionReceiptView(value) {
+  if (!isRecordValue(value)) {
+    return false;
+  }
+  const requestPublicId = value.requestPublicId;
+  return hasOnlyRecordKeys15(value, [
+    "requestPublicId",
+    "trackingRef",
+    "receiptState",
+    "outcomeKind",
+    "safetyState",
+    "requestSafetyState",
+    "workflowState",
+    "heading",
+    "summary",
+    "patientSafeSummary",
+    "safetyLabel",
+    "etaLabel",
+    "nextStepLabel",
+    "freshness",
+    "receiptHref",
+    "statusHref",
+    "actions",
+    "artifact",
+    "artifactPresentationContractRef",
+    "statusStrip",
+    "issuedAt"
+  ]) && isPatientProjectionRequestPublicId(requestPublicId) && value.trackingRef === requestPublicId && (value.receiptState === "issued" || value.receiptState === "read_only" || value.receiptState === "recovery_required" || value.receiptState === "superseded") && (value.outcomeKind === "routine_triage" || value.outcomeKind === "residual_review" || value.outcomeKind === "urgent_diversion" || value.outcomeKind === "fallback_review") && (value.safetyState === "online_checks_complete" || value.safetyState === "extra_review" || value.safetyState === "urgent_handling" || value.safetyState === "review_needed" || value.safetyState === "recovery") && (value.requestSafetyState === void 0 || value.requestSafetyState === "screen_clear" || value.requestSafetyState === "residual_risk_flagged" || value.requestSafetyState === "urgent_diversion_required" || value.requestSafetyState === "urgent_diverted" || value.requestSafetyState === "fallback_manual_review") && (value.workflowState === void 0 || value.workflowState === "submitted" || value.workflowState === "intake_normalized" || value.workflowState === "triage_ready" || value.workflowState === "triage_active" || value.workflowState === "handoff_active" || value.workflowState === "outcome_recorded" || value.workflowState === "closed") && typeof value.heading === "string" && value.heading.length > 0 && value.heading.length <= 160 && typeof value.summary === "string" && value.summary.length > 0 && value.summary.length <= 280 && (value.patientSafeSummary === void 0 || isPatientProjectionSafeSummary(value.patientSafeSummary)) && typeof value.safetyLabel === "string" && value.safetyLabel.length > 0 && value.safetyLabel.length <= 160 && typeof value.etaLabel === "string" && value.etaLabel.length > 0 && value.etaLabel.length <= 180 && typeof value.nextStepLabel === "string" && value.nextStepLabel.length > 0 && value.nextStepLabel.length <= 180 && isPatientProjectionFreshnessView(value.freshness, ["current", "stale", "recovery_required", "superseded"]) && isPatientShellReceiptHref(value.receiptHref, requestPublicId) && isPatientShellStatusHref(value.statusHref, requestPublicId) && Array.isArray(value.actions) && value.actions.length > 0 && value.actions.every((action6) => isPatientProjectionReceiptAction(action6, requestPublicId)) && isPatientProjectionReceiptArtifact(value.artifact) && (value.artifactPresentationContractRef === void 0 || isSafePublicRef(value.artifactPresentationContractRef)) && isPatientProjectionReceiptStatusStrip(value.statusStrip) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt);
+}
+function isPatientProjectionTimelineStep(value) {
+  return isRecordValue(value) && hasOnlyRecordKeys15(value, ["label", "state", "detail"]) && typeof value.label === "string" && value.label.length > 0 && value.label.length <= 120 && typeof value.detail === "string" && value.detail.length > 0 && value.detail.length <= 180 && (value.state === "complete" || value.state === "current" || value.state === "attention" || value.state === "next");
+}
+function isPatientProjectionStatusView(value) {
+  if (!isRecordValue(value)) {
+    return false;
+  }
+  const requestPublicId = value.requestPublicId;
+  return hasOnlyRecordKeys15(value, [
+    "requestPublicId",
+    "trackingRef",
+    "state",
+    "label",
+    "explanation",
+    "nextAction",
+    "freshness",
+    "lastUpdatedLabel",
+    "receiptHref",
+    "statusHref",
+    "recoveryHref",
+    "patientSafeSummary",
+    "timeline"
+  ]) && isPatientProjectionRequestPublicId(requestPublicId) && value.trackingRef === requestPublicId && (value.state === "submitted" || value.state === "triage_ready" || value.state === "awaiting_patient_reply" || value.state === "patient_reply_received" || value.state === "residual_risk_flagged" || value.state === "urgent_diversion_required" || value.state === "urgent_diverted" || value.state === "fallback_review" || value.state === "stale" || value.state === "recovery_required") && typeof value.label === "string" && value.label.length > 0 && value.label.length <= 160 && typeof value.explanation === "string" && value.explanation.length > 0 && value.explanation.length <= 280 && isPatientProjectionStatusAction(value.nextAction, requestPublicId) && isPatientProjectionFreshnessView(value.freshness, ["current", "stale", "recovery_required"]) && typeof value.lastUpdatedLabel === "string" && value.lastUpdatedLabel.length > 0 && value.lastUpdatedLabel.length <= 160 && isPatientShellReceiptHref(value.receiptHref, requestPublicId) && isPatientShellStatusHref(value.statusHref, requestPublicId) && (value.recoveryHref === void 0 || isSafeHref(value.recoveryHref)) && (value.patientSafeSummary === void 0 || isPatientProjectionSafeSummary(value.patientSafeSummary)) && Array.isArray(value.timeline) && value.timeline.length > 0 && value.timeline.every(isPatientProjectionTimelineStep);
 }
 function isPatientAmbientStateProjection(value) {
   return isRecordValue(value) && hasOnlyRecordKeys15(value, ["freshness", "identity", "continuity", "safety"]) && isRecordValue(value.freshness) && hasOnlyRecordKeys15(value.freshness, ["state", "label", "detail", "checkedAtLabel"]) && (value.freshness.state === "current" || value.freshness.state === "updating" || value.freshness.state === "delayed") && typeof value.freshness.label === "string" && typeof value.freshness.detail === "string" && typeof value.freshness.checkedAtLabel === "string" && isRecordValue(value.identity) && hasOnlyRecordKeys15(value.identity, ["state", "label", "detail"]) && isOneOf(value.identity.state, identityStates) && typeof value.identity.label === "string" && typeof value.identity.detail === "string" && isRecordValue(value.continuity) && hasOnlyRecordKeys15(value.continuity, ["label", "detail"]) && typeof value.continuity.label === "string" && typeof value.continuity.detail === "string" && isRecordValue(value.safety) && hasOnlyRecordKeys15(value.safety, ["label", "detail"]) && typeof value.safety.label === "string" && typeof value.safety.detail === "string";
@@ -27443,7 +27548,7 @@ function isPatientPortalEntryProjection(value) {
   ]) && isSafePublicRef(value.entryProjectionId) && typeof value.entryCause === "string" && patientPortalEntryCauses.includes(value.entryCause) && typeof value.requestedRouteFamilyRef === "string" && value.requestedRouteFamilyRef.startsWith("patient-route:") && typeof value.resolvedRouteFamilyRef === "string" && value.resolvedRouteFamilyRef.startsWith("patient-route:") && typeof value.resolvedSectionRef === "string" && value.resolvedSectionRef.startsWith("patient-section:") && typeof value.resolvedAnchorRef === "string" && value.resolvedAnchorRef.startsWith("patient-anchor:") && typeof value.selectedAnchorBindingRef === "string" && value.selectedAnchorBindingRef.startsWith("patient-anchor-binding:") && isPatientRouteMatch(value.safeDestinationRoute) && typeof value.sessionPosture === "string" && patientSessionPostures.includes(value.sessionPosture) && isOneOf(value.audienceTier, patientAudienceTiers) && isOneOf(value.identityState, identityStates) && (value.entryState === "orienting" || value.entryState === "ready" || value.entryState === "read_only" || value.entryState === "recovery_required") && isOneOf(value.contentPosture, patientPortalContentPostures) && isRecordValue(value.orientation) && hasOnlyRecordKeys15(value.orientation, ["headline", "summary", "trustCue"]) && typeof value.orientation.headline === "string" && value.orientation.headline.length > 0 && value.orientation.headline.length <= 160 && typeof value.orientation.summary === "string" && value.orientation.summary.length > 0 && value.orientation.summary.length <= 360 && typeof value.orientation.trustCue === "string" && value.orientation.trustCue.length > 0 && value.orientation.trustCue.length <= 240 && isPatientAudienceCoverageProjection(value.audienceCoverage) && isPatientShellConsistencyProjection(value.shellConsistency) && isPatientPortalNavigationProjection(value.navigation) && isPatientDegradedModeProjection(value.degradedMode) && isPatientContinuityEvidenceProjection(value.continuityEvidence) && isPatientPortalReleaseProjection(value.release) && isPatientPortalWritabilityProjection(value.writability) && isPatientActionProjection(value.primaryAction) && (value.secondaryAction === void 0 || isPatientActionProjection(value.secondaryAction)) && typeof value.lastSafeSummary === "string" && value.lastSafeSummary.length > 0 && isPatientReturnTargetProjection(value.returnTarget) && typeof value.computedAt === "string" && isIsoDateTime(value.computedAt);
 }
 function isPatientRouteProjection(value) {
-  return isRecordValue(value) && hasOnlyRecordKeys15(value, patientRouteProjectionKeys) && isPatientRouteMatch(value.route) && typeof value.pageTitle === "string" && value.pageTitle.length > 0 && value.pageTitle.length <= 160 && typeof value.eyebrow === "string" && typeof value.summary === "string" && isPatientSessionProjection(value.session) && (value.portalEntry === void 0 || isPatientPortalEntryProjection(value.portalEntry)) && isPatientActionProjection(value.primaryAction) && Array.isArray(value.secondaryActions) && value.secondaryActions.every(isPatientSecondaryActionProjection) && isPatientAmbientStateProjection(value.ambientState) && Array.isArray(value.casePulse) && value.casePulse.every(isPatientCasePulseStepProjection) && Array.isArray(value.sections) && value.sections.every(isPatientRouteSectionProjection);
+  return isRecordValue(value) && hasOnlyRecordKeys15(value, patientRouteProjectionKeys) && isPatientRouteMatch(value.route) && typeof value.pageTitle === "string" && value.pageTitle.length > 0 && value.pageTitle.length <= 160 && typeof value.eyebrow === "string" && typeof value.summary === "string" && isPatientSessionProjection(value.session) && (value.portalEntry === void 0 || isPatientPortalEntryProjection(value.portalEntry)) && isPatientActionProjection(value.primaryAction) && Array.isArray(value.secondaryActions) && value.secondaryActions.every(isPatientSecondaryActionProjection) && isPatientAmbientStateProjection(value.ambientState) && Array.isArray(value.casePulse) && value.casePulse.every(isPatientCasePulseStepProjection) && Array.isArray(value.sections) && value.sections.every(isPatientRouteSectionProjection) && (value.patientStatus === void 0 || isPatientProjectionStatusView(value.patientStatus)) && (value.patientReceipt === void 0 || isPatientProjectionReceiptView(value.patientReceipt));
 }
 function isPatientRouteProjectionResponse(value) {
   return isRecordValue(value) && hasOnlyRecordKeys15(value, ["schemaVersion", "projectionSourceRef", "loadedAt", "projection"]) && value.schemaVersion === "1.0" && typeof value.projectionSourceRef === "string" && value.projectionSourceRef.length > 0 && typeof value.loadedAt === "string" && isIsoDateTime(value.loadedAt) && isPatientRouteProjection(value.projection);
@@ -28736,7 +28841,6 @@ async function registerPatientWebRoutes(app, dependencies) {
       if (body.threadId !== request.params.threadId) {
         throw new GatewayHttpError(400, "patient_conversation_reply_thread_mismatch", "Reply could not be matched to this conversation.");
       }
-      const requestPublicId = requestPublicIdFromPatientConversationThreadId(request.params.threadId);
       const readAuthority = dependencies.patientWebSessionAuthService.requestReadAuthorityFromHeaders(request.headers, requestBinding);
       const result = await dependencies.patientConversationReplyService.submitReply(request.params.threadId, body, readAuthority, requestBinding);
       if (result.statusCode !== 200 || !isPatientConversationReplyResponse(result.response)) {
@@ -40011,7 +40115,13 @@ function moreInfoReceiptEnvelopeForSubmittedIntake(input) {
   const envelope = input.draftRecord.envelope;
   const requestPublicId = input.promotionRecord.requestPublicId;
   const currentReceiptEnvelopeId = input.currentReceipt?.patientReceiptEnvelopeId;
-  const nextReceiptEnvelopeId = `patient-receipt-envelope:${requestPublicId}:more-info`;
+  const safetyState = input.currentReceipt?.safetyState ?? "fallback_manual_review";
+  const nextReceiptEnvelopeId = computePatientReceiptEnvelopeId({
+    requestPublicId,
+    submissionPromotionRecordRef: input.promotionRecord.submissionPromotionRecordId,
+    receiptConsistencyKey: envelope.receiptConsistencyKey,
+    safetyState
+  });
   const withoutHash = {
     patientReceiptEnvelopeId: nextReceiptEnvelopeId,
     requestPublicId,
@@ -40021,7 +40131,7 @@ function moreInfoReceiptEnvelopeForSubmittedIntake(input) {
     requestLineageRef: input.promotionRecord.requestLineageRef,
     receiptConsistencyKey: envelope.receiptConsistencyKey,
     statusConsistencyKey: envelope.statusConsistencyKey,
-    safetyState: input.currentReceipt?.safetyState ?? "fallback_manual_review",
+    safetyState,
     receiptState: "issued",
     outcomeKind: input.currentReceipt?.outcomeKind ?? "fallback_review",
     freshnessState: "current",
@@ -57743,7 +57853,13 @@ function stableHash4(parts) {
 }
 function patientReplyReceiptEnvelope(input) {
   const currentReceiptEnvelopeId = input.currentReceipt?.patientReceiptEnvelopeId;
-  const nextReceiptEnvelopeId = `patient-receipt-envelope:${input.requestPublicId}:patient-reply-received`;
+  const safetyState = input.currentReceipt?.safetyState ?? "fallback_manual_review";
+  const nextReceiptEnvelopeId = computePatientReceiptEnvelopeId({
+    requestPublicId: input.requestPublicId,
+    submissionPromotionRecordRef: input.promotionRecord.submissionPromotionRecordId,
+    receiptConsistencyKey: input.draftRecord.envelope.receiptConsistencyKey,
+    safetyState
+  });
   const withoutHash = {
     patientReceiptEnvelopeId: nextReceiptEnvelopeId,
     requestPublicId: input.requestPublicId,
@@ -57753,7 +57869,7 @@ function patientReplyReceiptEnvelope(input) {
     requestLineageRef: input.promotionRecord.requestLineageRef,
     receiptConsistencyKey: input.draftRecord.envelope.receiptConsistencyKey,
     statusConsistencyKey: input.draftRecord.envelope.statusConsistencyKey,
-    safetyState: input.currentReceipt?.safetyState ?? "fallback_manual_review",
+    safetyState,
     receiptState: "issued",
     outcomeKind: input.currentReceipt?.outcomeKind ?? "fallback_review",
     freshnessState: "current",
@@ -58178,6 +58294,186 @@ function patientTimeLabel7(recordedAt) {
   })}`;
 }
 
+// services/api-gateway/src/services/patient-profile.service.ts
+import { mkdirSync as mkdirSync2, readFileSync as readFileSync2, renameSync as renameSync2, rmSync as rmSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import { dirname as dirname3 } from "node:path";
+var PatientProfileService = class {
+  persistenceFile;
+  profilesByPatientId = /* @__PURE__ */ new Map();
+  constructor(options = {}) {
+    this.persistenceFile = normalizedPersistenceFile2(options.persistenceFile);
+    if (this.persistenceFile === void 0) {
+      this.replaceWithSnapshot(seedPatientProfileSnapshot());
+      return;
+    }
+    mkdirSync2(dirname3(this.persistenceFile), { recursive: true });
+    const snapshot = loadSnapshotFromDisk2(this.persistenceFile) ?? seedPatientProfileSnapshot();
+    this.replaceWithSnapshot(snapshot);
+    this.persistIfConfigured();
+  }
+  profileForPatientBinding(binding) {
+    if (binding === void 0) {
+      return void 0;
+    }
+    const profile = [...this.profilesByPatientId.values()].find((candidate) => candidate.requestBinding.sessionRef === binding.sessionRef && candidate.requestBinding.csrfToken === binding.csrfToken);
+    return profile === void 0 ? void 0 : snapshotPublicProfile(profile);
+  }
+  replaceWithSnapshot(snapshot) {
+    this.profilesByPatientId.clear();
+    for (const profile of snapshot.profiles) {
+      this.profilesByPatientId.set(profile.patientId, snapshotProfile(profile));
+    }
+  }
+  exportSnapshot() {
+    return {
+      schemaVersion: "1.0",
+      profiles: [...this.profilesByPatientId.values()].sort((left, right) => left.patientId.localeCompare(right.patientId)).map(snapshotProfile)
+    };
+  }
+  persistIfConfigured() {
+    if (this.persistenceFile === void 0) {
+      return;
+    }
+    const payload = `${JSON.stringify(this.exportSnapshot())}
+`;
+    const tempPath = `${this.persistenceFile}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+    try {
+      writeFileSync2(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
+      renameSync2(tempPath, this.persistenceFile);
+    } catch (error) {
+      rmSync2(tempPath, { force: true });
+      throw error;
+    }
+  }
+};
+function normalizedPersistenceFile2(value) {
+  const normalized = value?.trim();
+  return normalized === void 0 || normalized.length === 0 ? void 0 : normalized;
+}
+function loadSnapshotFromDisk2(filePath) {
+  let serialized;
+  try {
+    serialized = readFileSync2(filePath, "utf8");
+  } catch (error) {
+    if (isNodeErrorCode3(error, "ENOENT")) {
+      return void 0;
+    }
+    throw error;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(serialized);
+  } catch (error) {
+    throw new Error(`Patient profile persistence file at ${filePath} is not valid JSON.`, { cause: error });
+  }
+  return parseProfileSnapshot(parsed, filePath);
+}
+function parseProfileSnapshot(value, filePath) {
+  if (!isRecord25(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.profiles)) {
+    throw new Error(`Patient profile persistence file at ${filePath} does not match the profile snapshot schema.`);
+  }
+  return {
+    schemaVersion: "1.0",
+    profiles: value.profiles.map((profile, index) => {
+      if (!isProfileRecord(profile)) {
+        throw new Error(`Patient profile persistence file at ${filePath} has an invalid profile at index ${index}.`);
+      }
+      return snapshotProfile(profile);
+    })
+  };
+}
+function seedPatientProfileSnapshot() {
+  return {
+    schemaVersion: "1.0",
+    profiles: demoPatientAccounts2.map(profileRecordForDemoAccount)
+  };
+}
+function profileRecordForDemoAccount(account) {
+  return {
+    patientId: account.patientId,
+    requestBinding: { ...account.requestBinding },
+    displayName: account.displayName,
+    rows: [
+      {
+        label: "Date of birth",
+        value: formatPatientProfileDate(account.pilotProfile.dateOfBirth)
+      },
+      {
+        label: "Home address",
+        value: formatPatientAddress(account.pilotProfile.addressLines, account.pilotProfile.postcode)
+      },
+      {
+        label: "Health ID",
+        value: maskedPatientHealthId(account.testNhsNumber)
+      }
+    ],
+    contactRows: [
+      {
+        label: "Mobile",
+        value: account.contactPreferences.phoneNumber ?? "Not recorded"
+      },
+      {
+        label: "Email",
+        value: account.contactPreferences.emailAddress ?? "Not recorded"
+      },
+      {
+        label: "Best time",
+        value: (account.contactPreferences.bestTimes ?? []).map((time) => time.label).join(", ") || "Any time"
+      }
+    ]
+  };
+}
+function snapshotProfile(profile) {
+  return {
+    patientId: profile.patientId,
+    requestBinding: { ...profile.requestBinding },
+    displayName: profile.displayName,
+    rows: profile.rows.map((row) => ({ ...row })),
+    contactRows: profile.contactRows.map((row) => ({ ...row }))
+  };
+}
+function snapshotPublicProfile(profile) {
+  return {
+    displayName: profile.displayName,
+    rows: profile.rows.map((row) => ({ ...row })),
+    contactRows: profile.contactRows.map((row) => ({ ...row }))
+  };
+}
+function formatPatientProfileDate(value) {
+  const [year, month, day] = value.split("-").map((part) => Number.parseInt(part, 10));
+  if (!year || !month || !day) {
+    return value;
+  }
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+function formatPatientAddress(lines, postcode) {
+  return [...lines, postcode].filter((part) => part.trim().length > 0).join(", ");
+}
+function maskedPatientHealthId(value) {
+  const digits = value.replace(/\D/gu, "");
+  const ending = digits.slice(-4);
+  return ending ? `Ending ${ending}` : "Recorded";
+}
+function isProfileRecord(value) {
+  return isRecord25(value) && typeof value.patientId === "string" && isRequestBinding(value.requestBinding) && typeof value.displayName === "string" && Array.isArray(value.rows) && value.rows.every(isProfileRow) && Array.isArray(value.contactRows) && value.contactRows.every(isProfileRow);
+}
+function isRequestBinding(value) {
+  return isRecord25(value) && typeof value.sessionRef === "string" && typeof value.csrfToken === "string";
+}
+function isProfileRow(value) {
+  return isRecord25(value) && typeof value.label === "string" && typeof value.value === "string";
+}
+function isRecord25(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isNodeErrorCode3(error, code) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
 // services/api-gateway/src/services/patient-receipt.service.ts
 var PatientReceiptServiceError = class extends Error {
   statusCode;
@@ -58426,30 +58722,30 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
       return content({
         stateFamily,
         pageTitle: "We need to check this account",
-        summary: "This page is paused while the service checks that the right account is being used.",
+        summary: "We need to check that the right account is being used before showing private details.",
         sessionPosture: "recovery_only",
         identityState: "recoveryOnly",
         reason: "identity_repair_required",
         primaryAction: action3("Get help", "/recovery", "primary", "Get help without showing private details."),
-        secondaryAction: action3("Sign out", "/account/sign-out", "supportive", "End this session."),
+        secondaryAction: action3("Sign out", "/account/sign-out", "supportive", "End this sign-in."),
         nextStep: {
           heading: "What happens next",
-          body: "The service may ask for a safe confirmation before account access returns."
+          body: "We may ask you to confirm it is you before account access returns."
         }
       });
     case "binding_dispute_support":
       return content({
         stateFamily,
-        pageTitle: "Account support is needed",
-        summary: "The service needs to check account access before more information is shown.",
+        pageTitle: "We need to check your account",
+        summary: "We need to check account access before showing more information.",
         sessionPosture: "recovery_only",
         identityState: "supportRequired",
         reason: "identity_repair_required",
         primaryAction: action3("Get help", "/recovery", "primary", "Get help without showing private details."),
         secondaryAction: action3("Return home", "/", "supportive", "Go back to the patient portal home page."),
         nextStep: {
-          heading: "Support review",
-          body: "A safe support step can correct access before private information is shown again."
+          heading: "Account help",
+          body: "Get help so access can be corrected before private details are shown again."
         }
       });
     case "recovery_only_session":
@@ -58478,12 +58774,12 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
       return content({
         stateFamily,
         pageTitle: "We need to check your account",
-        summary: "Get help so we can check which options are available without showing private details.",
+        summary: "We can guide the next step without showing personal details.",
         sessionPosture: "restricted",
         identityState: "restricted",
         reason: "denied_scope",
         primaryAction: action3("Get help", "/recovery", "primary", "Get help without showing private details."),
-        secondaryAction: action3("Sign out", "/account/sign-out", "supportive", "End this session."),
+        secondaryAction: action3("Sign out", "/account/sign-out", "supportive", "End this sign-in."),
         nextStep: {
           heading: "What happens next",
           body: "We can help you continue with the options available for your account."
@@ -58526,7 +58822,7 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
       return content({
         stateFamily,
         pageTitle: "Use the latest link",
-        summary: "A newer message or safer step is needed before this action can continue.",
+        summary: "A newer message or updated step is needed before this action can continue.",
         sessionPosture: "recovery_only",
         identityState: "recoveryOnly",
         reason: "superseded",
@@ -59987,11 +60283,11 @@ var contactRepairScenarios2 = [
     blockedActionLabel: "callback",
     governingObjectRef: "callback-case:msg_callback_repair",
     returnHref: "/messages/msg_callback_repair",
-    returnLabel: "Return to callback thread",
+    returnLabel: "Return to message thread",
     title: "Check callback contact details",
     summary: "A callback is waiting, but the phone contact details need checking before the team can rely on them.",
     safeRouteLabel: "Phone call contact details",
-    currentRouteSafeSummary: "The previous callback details are hidden; only the failed contact type is shown.",
+    currentRouteSafeSummary: "Previous callback details stay private; only the failed contact type is shown.",
     reasonCode: "callback_route_failed",
     selectedAnchorRef: "patient-anchor:messages:msg_callback_repair",
     deliveryRiskState: "likely_failed"
@@ -60038,14 +60334,14 @@ var contactRepairScenarios2 = [
     repairState: "rebound_pending",
     identityGateState: "authenticated",
     blockedActionRef: "consent_preference",
-    blockedActionLabel: "communication preference",
+    blockedActionLabel: "contact choice",
     governingObjectRef: "consent-checkpoint:callback-contact",
     returnHref: "/messages/msg_callback_repair",
-    returnLabel: "Return to callback thread",
-    title: "Reconnect communication preference",
-    summary: "The contact details are being checked. The call is paused until the final check is complete.",
-    safeRouteLabel: "Communication preference",
-    currentRouteSafeSummary: "The old preference details stay hidden while the final check finishes.",
+    returnLabel: "Return to message thread",
+    title: "Check contact choice",
+    summary: "The contact details are being checked before the call can continue.",
+    safeRouteLabel: "Contact choice",
+    currentRouteSafeSummary: "The previous choice stays hidden while the final check finishes.",
     reasonCode: "consent_preference_mismatch",
     selectedAnchorRef: "patient-anchor:contact-repair:repair_consent_rebound",
     deliveryRiskState: "at_risk"
@@ -60169,9 +60465,9 @@ var contactRepairScenarios2 = [
     blockedActionLabel: "callback",
     governingObjectRef: "callback-case:msg_callback_repair",
     returnHref: "/messages/msg_callback_repair",
-    returnLabel: "Return to callback thread",
+    returnLabel: "Return to message thread",
     title: "Contact details checked",
-    summary: "The contact details are checked and current, so the callback can reopen.",
+    summary: "The contact details are checked and current, so the callback can continue.",
     safeRouteLabel: "Phone call contact details",
     currentRouteSafeSummary: "The updated contact details are checked. Private contact details are still hidden.",
     reasonCode: "repair_completed",
@@ -60307,11 +60603,11 @@ function contactRepairPrimaryAction(scenario2, returnAction) {
     case "ready":
       return action4("Update contact details", `/contact/repair/${scenario2.repairJourneyId}#collect`, "primary", `Update contact details before ${scenario2.blockedActionLabel}.`);
     case "collecting_route":
-      return action4("Continue to check", `/contact/repair/${scenario2.repairJourneyId}#verify`, "primary", "Check the new contact detail before turning actions back on.");
+      return action4("Continue to check", `/contact/repair/${scenario2.repairJourneyId}#verify`, "primary", "Check the new contact detail before this can continue.");
     case "awaiting_verification":
       return action4("Check contact detail", `/contact/repair/${scenario2.repairJourneyId}#verify`, "primary", "Confirm the contact detail check.");
     case "rebound_pending":
-      return action4("Finish contact check", `/contact/repair/${scenario2.repairJourneyId}#rebound`, "primary", "Recheck the contact detail before reopening the action.");
+      return action4("Finish setup", `/contact/repair/${scenario2.repairJourneyId}#rebound`, "primary", "Finish this check before returning to the request.");
     case "completed":
       return returnAction;
     case "recovery_required":
@@ -60384,7 +60680,7 @@ function contactRepairSettlement(scenario2, contactRepairJourneyRef, verificatio
     routeAuthorityState: completed || rebound ? "current" : "not_available",
     blockedControlsReopenState: completed ? "open" : rebound ? "reopens_after_rebound" : "blocked",
     authoritativeOutcomeState: completed ? "settled" : scenario2.repairState === "recovery_required" ? "recovery_required" : "pending",
-    safeCopy: completed ? "The contact check is complete. The paused action can reopen from the return page." : rebound ? "Verification is complete. The paused action waits for the final check." : "The paused action stays paused until the contact check is confirmed.",
+    safeCopy: completed ? "The contact check is complete. Return to the related page to continue." : rebound ? "Verification is complete. Finish the final check before continuing." : "This request waits until the contact check is confirmed.",
     recordedAt: renderedAt
   };
 }
@@ -60921,8 +61217,8 @@ function conversationSeedFixtures(session, computedAt) {
       requestRef: "trk_moreinfo_reply",
       episodeRef: "episode:medication-review",
       clusterState: "active",
-      title: "Reply needs to restart",
-      safeSummary: "The reply box timed out and needs a quick restart before sending.",
+      title: "Restart your reply",
+      safeSummary: "Your earlier reply was not sent.",
       latestSafeUpdateLabel: "Today 12:08",
       unreadCount: 0,
       replyNeededState: "blocked",
@@ -60930,19 +61226,19 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "none",
       deliveryRiskState: "at_risk",
       authoritativeOutcomeState: "awaiting_delivery_truth",
-      dominantAction: gatedAction(action4("Restart reply", "/messages/msg_medication_reply#composer", "supportive", "Open a fresh reply box before sending."), session, "read"),
+      dominantAction: gatedAction(action4("Restart reply", "/messages/msg_medication_reply#composer", "supportive", "Open a fresh reply before sending."), session, "read"),
       composerLeaseState: "resume_required",
       sendEligibilityState: "resume_required",
       staleThreadState: "expired_lease",
       leaseExpiresAt: "2026-05-24T11:55:00.000Z",
-      composerDraftSummary: "Your draft is saved, but sending needs a quick restart.",
+      composerDraftSummary: "Your draft is saved. Open a fresh reply before sending.",
       chipLabels: ["Restart needed", "Draft saved"],
       subthreads: [
         {
           subthreadRef: "conversation-subthread:expired-lease",
           subthreadType: "message_thread",
-          title: "Reply timed out",
-          safeSummary: "The reply box timed out before the reply was sent.",
+          title: "Reply not sent",
+          safeSummary: "The previous reply window closed before sending.",
           markerLabel: "Restart needed",
           receiptStateLabel: "Restart needed"
         }
@@ -68590,6 +68886,7 @@ var PatientRouteProjectionService = class {
   patientStatusService;
   deepLinkResolutionService;
   demoPatientMessageService;
+  patientProfileService;
   secureLinkRedemptionService;
   featureFlags;
   allowFixtureFallback;
@@ -68603,12 +68900,20 @@ var PatientRouteProjectionService = class {
     });
     this.deepLinkResolutionService = options.deepLinkResolutionService;
     this.demoPatientMessageService = options.demoPatientMessageService;
+    this.patientProfileService = options.patientProfileService ?? new PatientProfileService();
     this.secureLinkRedemptionService = options.secureLinkRedemptionService ?? new SecureLinkRedemptionService(clockOptions);
     this.featureFlags = options.featureFlags ?? defaultPatientProjectionFeatureFlags;
     this.allowFixtureFallback = options.allowFixtureFallback ?? false;
     this.now = options.now ?? (() => /* @__PURE__ */ new Date());
   }
   async loadProjection(request, authority, requestBinding) {
+    if (!isPatientRouteProjectionRequest(request)) {
+      throw new GatewayHttpError(
+        400,
+        "patient_projection_invalid_request",
+        "Patient projection request did not match the public route contract."
+      );
+    }
     const routeFamilyRef = routeFamilyRefFor2(request.route.key);
     if (request.expectedRouteFamilyRef !== void 0 && request.expectedRouteFamilyRef !== routeFamilyRef) {
       throw new GatewayHttpError(
@@ -68679,7 +68984,10 @@ var PatientRouteProjectionService = class {
           authority,
           requestBinding
         );
-        return adaptPatientReceiptProjection(result.response, route, projectionContext);
+        return this.projectionWithPatientAccountProfile(
+          adaptPatientReceiptProjection(result.response, route, projectionContext),
+          requestBinding
+        );
       } catch (error) {
         return this.fallbackProjectionOrThrow(error, route, "patient_receipt_projection_unavailable", projectionContext);
       }
@@ -68695,7 +69003,10 @@ var PatientRouteProjectionService = class {
           authority,
           requestBinding
         );
-        return adaptPatientStatusProjection(result.response, route, projectionContext);
+        return this.projectionWithPatientAccountProfile(
+          adaptPatientStatusProjection(result.response, route, projectionContext),
+          requestBinding
+        );
       } catch (error) {
         return this.fallbackProjectionOrThrow(error, route, "patient_status_projection_unavailable", projectionContext);
       }
@@ -68711,16 +69022,28 @@ var PatientRouteProjectionService = class {
           return this.fallbackProjectionOrThrow(error, route, "patient_conversation_projection_unavailable", projectionContext);
         }
       }
-      const projection = this.projectionWithDemoPatientMessages(
-        adaptPatientRouteProjection(route, this.featureFlags, projectionContext),
-        route,
+      const projection = projectionWithCleanStartDemoPatient(
+        this.projectionWithDemoPatientMessages(
+          this.projectionWithPatientAccountProfile(
+            adaptPatientRouteProjection(route, this.featureFlags, projectionContext),
+            requestBinding
+          ),
+          route,
+          requestBinding
+        ),
         requestBinding
       );
       return liveRequestStatus === void 0 ? projection : projectionWithLiveRequestConversationStatus(projection, liveRequestStatus);
     }
-    return this.projectionWithDemoPatientMessages(
-      adaptPatientRouteProjection(route, this.featureFlags, projectionContext),
-      route,
+    return projectionWithCleanStartDemoPatient(
+      this.projectionWithDemoPatientMessages(
+        this.projectionWithPatientAccountProfile(
+          adaptPatientRouteProjection(route, this.featureFlags, projectionContext),
+          requestBinding
+        ),
+        route,
+        requestBinding
+      ),
       requestBinding
     );
   }
@@ -68759,7 +69082,298 @@ var PatientRouteProjectionService = class {
     const threads = this.demoPatientMessageService?.threadsForPatientBinding(requestBinding) ?? [];
     return projectionWithDemoClinicianMessageThreads(projection, route, threads);
   }
+  projectionWithPatientAccountProfile(projection, requestBinding) {
+    if (projection.accountStatus === void 0) {
+      return projection;
+    }
+    const profile = this.patientProfileService.profileForPatientBinding(requestBinding);
+    if (profile === void 0) {
+      return projection;
+    }
+    return {
+      ...projection,
+      accountStatus: {
+        ...projection.accountStatus,
+        profile
+      }
+    };
+  }
 };
+var cleanStartDemoPatientIds = /* @__PURE__ */ new Set(["amjad", "george", "humdan"]);
+function cleanStartDemoPatientAccountForBinding(requestBinding) {
+  if (requestBinding === void 0) {
+    return void 0;
+  }
+  return demoPatientAccounts2.find((account) => cleanStartDemoPatientIds.has(account.patientId) && account.requestBinding.sessionRef === requestBinding.sessionRef && account.requestBinding.csrfToken === requestBinding.csrfToken);
+}
+function projectionWithCleanStartDemoPatient(projection, requestBinding) {
+  if (cleanStartDemoPatientAccountForBinding(requestBinding) === void 0) {
+    return projection;
+  }
+  const signedInHome = projection.signedInHome === void 0 ? void 0 : cleanStartSignedInHome(projection.signedInHome);
+  const patientRequestsIndex = projection.patientRequestsIndex === void 0 ? void 0 : cleanStartRequestsIndex(projection.patientRequestsIndex);
+  const patientConversationInbox = projection.patientConversationInbox === void 0 ? void 0 : cleanStartConversationInbox(projection.patientConversationInbox);
+  const hasClinicianMessages = patientConversationInbox === void 0 ? false : hasClinicianPatientMessages(patientConversationInbox);
+  const primaryAction = signedInHome?.actions.primaryAction ?? patientRequestsIndex?.dominantAction ?? patientConversationInbox?.dominantNextAction ?? projection.primaryAction;
+  return {
+    ...projection,
+    ...projection.route.key === "home" ? {
+      pageTitle: "Home",
+      summary: "Start a new request when you need help.",
+      sections: [{ heading: "Today", body: "No active requests need attention." }]
+    } : {},
+    ...projection.route.key === "requests" ? {
+      summary: "New requests will appear here after you start one."
+    } : {},
+    ...(projection.route.key === "messages" || projection.route.key === "messageThread") && !hasClinicianMessages ? {
+      pageTitle: "Messages",
+      summary: "Messages from the practice will appear here."
+    } : {},
+    primaryAction,
+    ...signedInHome === void 0 ? {} : { signedInHome },
+    ...patientRequestsIndex === void 0 ? {} : { patientRequestsIndex },
+    ...patientConversationInbox === void 0 ? {} : { patientConversationInbox }
+  };
+}
+function cleanStartSignedInHome(home) {
+  const primaryAction = cleanStartAction(home.actions.primaryAction, "primary");
+  const supportiveAction = cleanStartAction(home.actions.primaryAction, "supportive");
+  const nextAction = {
+    ...home.home.nextAction,
+    label: primaryAction.label,
+    helper: primaryAction.helper,
+    action: primaryAction,
+    actionState: "live",
+    blockingReasonCodes: []
+  };
+  const spotlight = {
+    ...home.home.spotlight,
+    title: "Start a request",
+    summary: "Start a new request when you need help.",
+    trustCue: "Ready to start",
+    selectedAnchorRef: "patient-anchor:home:start-request",
+    nextAction
+  };
+  return {
+    ...home,
+    home: {
+      ...home.home,
+      patientHomeProjectionId: `${home.home.patientHomeProjectionId}:clean-start`,
+      spotlight,
+      secondaryCards: home.home.secondaryCards.map((card) => cleanStartHomeCard(card, supportiveAction)),
+      secondaryCardOrderingHash: `${home.home.secondaryCardOrderingHash}:clean-start`,
+      nextAction,
+      quietHomeDecision: {
+        ...home.home.quietHomeDecision,
+        title: "Nothing needs action right now",
+        summary: "New requests, replies, appointments, and updates will appear here."
+      },
+      spotlightDecision: {
+        ...home.home.spotlightDecision,
+        selectedCandidateSource: "start_request",
+        selectedAnchorRef: "patient-anchor:home:start-request",
+        selectedNextActionState: "live",
+        blockingReasonCodes: []
+      }
+    },
+    identityStatement: {
+      label: "Ready to start",
+      summary: "No active requests yet. New requests will appear here after you start one."
+    },
+    actions: {
+      ...home.actions,
+      primaryAction,
+      secondaryActions: [
+        supportiveAction,
+        ...home.actions.secondaryActions.filter((action6) => !/continue|saved|check a request/iu.test(action6.label))
+      ]
+    },
+    activeRequests: [],
+    communicationSummary: {
+      ...home.communicationSummary,
+      value: "No unread messages",
+      helper: "Messages from the practice will appear here."
+    },
+    callbackSummary: {
+      ...home.callbackSummary,
+      value: "No callback booked",
+      helper: "Any agreed callback time will be shown here."
+    },
+    statusItems: [
+      "No active requests need attention.",
+      "Messages and callbacks will appear here when available."
+    ]
+  };
+}
+function cleanStartHomeCard(card, startAction) {
+  if (card.kind === "active_requests") {
+    return {
+      ...card,
+      stateLabel: "Nothing waiting",
+      summary: "No active requests yet.",
+      trustCue: "New requests will appear here after you start one.",
+      action: startAction,
+      cardState: "quiet",
+      selectedAnchorRef: "patient-anchor:home:quiet",
+      detailRows: [{ label: "Next step", value: "Start a request if needed" }]
+    };
+  }
+  if (card.kind === "messages") {
+    return {
+      ...card,
+      stateLabel: "No unread messages",
+      summary: "Messages from the practice will appear here.",
+      trustCue: "No message action is waiting.",
+      cardState: "quiet",
+      detailRows: [
+        { label: "Unread", value: "None" },
+        { label: "Reply", value: "None needed" }
+      ]
+    };
+  }
+  return card;
+}
+function cleanStartRequestsIndex(index) {
+  const dominantAction = cleanStartAction(index.dominantAction, "primary");
+  return {
+    ...index,
+    patientRequestsIndexProjectionId: `${index.patientRequestsIndexProjectionId}:clean-start`,
+    activeBucketKey: "needs_attention",
+    visibleBuckets: index.visibleBuckets.map((bucket) => ({
+      ...bucket,
+      count: 0,
+      rows: [],
+      emptyLabel: cleanStartBucketEmptyLabel(bucket.bucketKey)
+    })),
+    filterState: {
+      ...index.filterState,
+      selectedAnchorRef: "patient-anchor:request:empty"
+    },
+    selectedAnchorRef: "patient-anchor:request:empty",
+    selectedAnchorTupleHash: "patient-request-selected-anchor:clean-start",
+    selectedRowRef: "patient-request-row:empty",
+    dominantActionRef: "patient-request-action:start-request",
+    dominantAction,
+    trustCueRef: "patient-request-index-trust:clean-start",
+    trustCue: "New requests will appear here after you start one.",
+    requestSummaryRefs: [],
+    requestLineageRefs: [],
+    requestSummaries: [],
+    requestLineages: [],
+    bucketMembershipDigestRef: "patient-request-bucket-membership:clean-start",
+    lineageOrderingDigestRef: "patient-request-lineage-order:clean-start",
+    expandedRowRef: "patient-request-row:empty"
+  };
+}
+function cleanStartBucketEmptyLabel(bucketKey) {
+  if (bucketKey === "needs_attention") {
+    return "No requests need action yet.";
+  }
+  if (bucketKey === "in_progress") {
+    return "No requests are in progress yet.";
+  }
+  return "No completed requests yet.";
+}
+function cleanStartConversationInbox(inbox) {
+  const clinicianThreadIds = new Set(
+    inbox.threadProjections.filter((thread) => isClinicianPatientMessageThreadId(thread.threadId)).map((thread) => thread.threadId)
+  );
+  if (clinicianThreadIds.size > 0) {
+    return cleanStartConversationInboxWithClinicianThreads(inbox, clinicianThreadIds);
+  }
+  const dominantNextAction = cleanStartAction(inbox.dominantNextAction, "supportive");
+  const selectedThread = {
+    ...inbox.selectedThread,
+    threadProjectionId: `${inbox.selectedThread.threadProjectionId}:clean-start`,
+    clusterRef: "patient-conversation-cluster:clean-start",
+    threadId: "clean-start",
+    groupRef: "governing-request:clean-start",
+    groupLabel: "No messages yet",
+    selectedSubthreadRef: "patient-conversation-subthread:clean-start",
+    selectedAnchorRef: "patient-anchor:messages",
+    threadTupleHash: "patient-conversation-thread:clean-start",
+    unreadCount: 0,
+    replyNeededState: "none",
+    awaitingReviewState: "none",
+    repairRequiredState: "none",
+    deliveryRiskState: "on_track",
+    authoritativeOutcomeState: "settled",
+    dominantNextAction,
+    composerLease: null,
+    subthreads: [],
+    timeline: [],
+    receiptEnvelopeRefs: []
+  };
+  return {
+    ...inbox,
+    inboxProjectionId: `${inbox.inboxProjectionId}:clean-start`,
+    selectedAnchorRef: "patient-anchor:messages",
+    selectedClusterRef: "patient-conversation-cluster:clean-start",
+    selectedThreadId: "clean-start",
+    groups: [],
+    clusters: [],
+    previewDigests: [],
+    threadProjections: [selectedThread],
+    selectedThread,
+    receiptEnvelopes: [],
+    urgentDiversionStates: [],
+    unreadTotal: 0,
+    replyNeededCount: 0,
+    awaitingReviewCount: 0,
+    repairRequiredCount: 0,
+    dominantNextAction,
+    liveAnnouncement: "No messages yet.",
+    placeholderDisclosure: "Messages from the practice will appear here."
+  };
+}
+function cleanStartConversationInboxWithClinicianThreads(inbox, clinicianThreadIds) {
+  const clusters = inbox.clusters.filter((cluster) => clinicianThreadIds.has(cluster.threadId));
+  const previewDigests = inbox.previewDigests.filter((digest) => clinicianThreadIds.has(digest.threadId));
+  const threadProjections = inbox.threadProjections.filter((thread) => clinicianThreadIds.has(thread.threadId));
+  const receiptEnvelopes = inbox.receiptEnvelopes.filter((receipt) => clinicianThreadIds.has(receipt.threadId));
+  const clusterIds = new Set(clusters.map((cluster) => cluster.clusterId));
+  const selectedThread = threadProjections.find((thread) => thread.threadId === inbox.selectedThreadId) ?? threadProjections[0] ?? inbox.selectedThread;
+  const selectedDigest = previewDigests.find((digest) => digest.threadId === selectedThread.threadId);
+  return {
+    ...inbox,
+    clusters,
+    previewDigests,
+    threadProjections,
+    selectedThread,
+    selectedThreadId: selectedThread.threadId,
+    selectedClusterRef: selectedThread.clusterRef,
+    selectedAnchorRef: selectedThread.selectedAnchorRef,
+    receiptEnvelopes,
+    urgentDiversionStates: inbox.urgentDiversionStates.filter((state) => clusterIds.has(state.clusterRef)),
+    groups: inbox.groups.map((group) => ({
+      ...group,
+      clusterRefs: group.clusterRefs.filter((clusterRef) => clusters.some((cluster) => cluster.clusterId === clusterRef)),
+      unreadCount: clusters.filter((cluster) => group.clusterRefs.includes(cluster.clusterId)).reduce((total, cluster) => {
+        const digest = previewDigests.find((preview) => preview.threadId === cluster.threadId);
+        return total + (digest?.unreadCount ?? 0);
+      }, 0)
+    })).filter((group) => group.clusterRefs.length > 0),
+    unreadTotal: previewDigests.reduce((total, digest) => total + digest.unreadCount, 0),
+    replyNeededCount: previewDigests.filter((digest) => digest.replyNeededState === "reply_needed").length,
+    awaitingReviewCount: previewDigests.filter((digest) => digest.awaitingReviewState === "awaiting_review").length,
+    repairRequiredCount: previewDigests.filter((digest) => digest.repairRequiredState !== "none").length,
+    dominantNextAction: selectedThread.dominantNextAction,
+    liveAnnouncement: selectedDigest?.safePreviewSummary ?? inbox.liveAnnouncement,
+    placeholderDisclosure: "Messages from the practice will appear here."
+  };
+}
+function hasClinicianPatientMessages(inbox) {
+  return inbox.threadProjections.some((thread) => isClinicianPatientMessageThreadId(thread.threadId));
+}
+function cleanStartAction(source, tone) {
+  return {
+    ...source,
+    label: "Start a request",
+    href: "/request/new",
+    tone,
+    helper: "Start a new request when you need help."
+  };
+}
 function isPatientSecureLinkPreviewToken(token2) {
   return token2 === "checking" || token2 === "denied" || token2 === "used-secret-token" || token2 === "expired-secret-token" || token2 === "subject-mismatch-token";
 }
@@ -70697,6 +71311,9 @@ async function createGatewayApp(options = {}) {
     ...patientMessagePersistenceFile.length === 0 ? {} : { persistenceFile: patientMessagePersistenceFile },
     now
   });
+  const patientProfileService = options.patientProfileService ?? new PatientProfileService({
+    persistenceFile: config.patientProfilePersistenceFile
+  });
   const initialIntakeRepositorySnapshot = sharedIntakeRepository instanceof InMemoryIntakeDraftRepository ? sharedIntakeRepository.exportSnapshot() : void 0;
   const clinicalWorkspaceStaffAuthService = options.clinicalWorkspaceStaffAuthService ?? new ClinicalWorkspaceStaffAuthService({
     allowDemoSessions: !config.production,
@@ -70796,6 +71413,7 @@ async function createGatewayApp(options = {}) {
     patientStatusService,
     deepLinkResolutionService,
     demoPatientMessageService,
+    patientProfileService,
     secureLinkRedemptionService,
     allowFixtureFallback: !config.production,
     now

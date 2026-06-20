@@ -11402,6 +11402,11 @@ var gatewayConfigSchema = {
       parser: configString({ maxLength: 8192 }),
       defaultValue: ""
     },
+    clinicalStaffDirectoryPersistenceFile: {
+      key: "API_GATEWAY_CLINICAL_STAFF_DIRECTORY_PERSISTENCE_FILE",
+      parser: configString({ maxLength: 1024 }),
+      defaultValue: ""
+    },
     patientWebSessionCatalog: {
       key: "API_GATEWAY_PATIENT_WEB_SESSION_CATALOG",
       parser: configString({ maxLength: 8192 }),
@@ -27258,6 +27263,29 @@ function isPatientSecureLinkRouteParam(value) {
 function isPatientConversationThreadRouteParam(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 120 && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/u.test(value);
 }
+function isPatientAppointmentRouteParam(value) {
+  return isSafePublicRef(value) && value.startsWith("apt_");
+}
+function isPatientRecordRouteParam(value) {
+  return typeof value === "string" && /^[A-Za-z0-9._:-]{1,80}$/u.test(value) && !/(raw|payload|debug|fhir|provider|nhs)/iu.test(value);
+}
+function isPatientAppointmentRouteKey(key) {
+  return key === "appointmentDetail" || key === "appointmentManage" || key === "appointmentCancel" || key === "appointmentReschedule";
+}
+function patientAppointmentRoutePathFor(key, appointmentId) {
+  switch (key) {
+    case "appointmentDetail":
+      return `/appointments/${encodeURIComponent(appointmentId)}`;
+    case "appointmentManage":
+      return `/appointments/${encodeURIComponent(appointmentId)}/manage`;
+    case "appointmentCancel":
+      return `/appointments/${encodeURIComponent(appointmentId)}/cancel`;
+    case "appointmentReschedule":
+      return `/appointments/${encodeURIComponent(appointmentId)}/reschedule`;
+    default:
+      return `/appointments/${encodeURIComponent(appointmentId)}`;
+  }
+}
 function isPatientRoutePathBoundToParams(key, path, params) {
   if (key === "requestReceipt") {
     const requestPublicId = params.requestPublicId;
@@ -27270,6 +27298,14 @@ function isPatientRoutePathBoundToParams(key, path, params) {
   if (key === "messageThread") {
     const threadId = params.threadId;
     return isPatientConversationThreadRouteParam(threadId) && path === `/messages/${encodeURIComponent(threadId)}`;
+  }
+  if (isPatientAppointmentRouteKey(key)) {
+    const appointmentId = params.appointmentId;
+    return isPatientAppointmentRouteParam(appointmentId) && path === patientAppointmentRoutePathFor(key, appointmentId);
+  }
+  if (key === "recordDetail") {
+    const recordItemId = params.recordItemId;
+    return isPatientRecordRouteParam(recordItemId) && path === `/records/${encodeURIComponent(recordItemId)}`;
   }
   if (key === "secureLink") {
     const secureLinkToken = params.secureLinkToken;
@@ -44285,23 +44321,42 @@ function uniqueSubjectRefs2(values) {
 }
 
 // services/api-gateway/src/services/clinical-workspace-staff-auth.service.ts
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 var ClinicalWorkspaceStaffAuthService = class {
   identityByToken = /* @__PURE__ */ new Map();
+  dynamicDemoIdentityByBaseToken = /* @__PURE__ */ new Map();
   allowDemoSessions;
+  demoCredentials;
   constructor(options = {}) {
     this.allowDemoSessions = options.allowDemoSessions === true;
+    const demoCredentials = [];
     if (options.allowDemoSessions === true) {
-      for (const entry of demoStaffSessions) {
+      for (const entry of baseDemoStaffSessions) {
         this.identityByToken.set(entry.token, cloneIdentity(entry.identity));
+        this.dynamicDemoIdentityByBaseToken.set(entry.token, cloneIdentity(entry.identity));
+      }
+      demoCredentials.push(...baseDemoStaffCredentials);
+      const staffDirectory = loadClinicalStaffDirectory(options.staffDirectoryPersistenceFile);
+      for (const account of staffDirectory.accounts) {
+        const identity = staffIdentity(account.staffIdentity);
+        this.identityByToken.set(account.staffSessionToken, cloneIdentity(identity));
+        this.dynamicDemoIdentityByBaseToken.set(account.staffSessionToken, cloneIdentity(identity));
+        demoCredentials.push({
+          token: account.staffSessionToken,
+          password: account.password,
+          credentials: account.acceptedCredentials
+        });
       }
     }
+    this.demoCredentials = demoCredentials;
     for (const entry of parseStaffSessionCatalog(options.sessionCatalog ?? "")) {
       this.identityByToken.set(entry.token, cloneIdentity(entry.identity));
     }
   }
   startStaffSession(request) {
     const credential = normalizeStaffCredential(request.staffCredential);
-    const demoCredential = this.allowDemoSessions ? demoStaffCredentials.find((entry) => hasDemoCredential(entry.credentials, credential) && request.password === entry.password) : void 0;
+    const demoCredential = this.allowDemoSessions ? this.demoCredentials.find((entry) => hasDemoCredential(entry.credentials, credential) && request.password === entry.password) : void 0;
     if (demoCredential === void 0) {
       throw new GatewayHttpError(
         401,
@@ -44359,7 +44414,7 @@ var ClinicalWorkspaceStaffAuthService = class {
     if (identity !== void 0) {
       return cloneIdentity(identity);
     }
-    const dynamicDemoIdentity = this.allowDemoSessions ? dynamicDemoStaffIdentityFor(token2) : void 0;
+    const dynamicDemoIdentity = this.allowDemoSessions ? this.dynamicDemoStaffIdentityFor(token2) : void 0;
     if (dynamicDemoIdentity === void 0) {
       throw new GatewayHttpError(
         401,
@@ -44369,8 +44424,35 @@ var ClinicalWorkspaceStaffAuthService = class {
     }
     return dynamicDemoIdentity;
   }
+  dynamicDemoStaffIdentityFor(token2) {
+    const separatorIndex = token2.indexOf(":");
+    if (separatorIndex === -1) {
+      return void 0;
+    }
+    const baseToken = token2.slice(0, separatorIndex);
+    const sessionSuffix = token2.slice(separatorIndex + 1);
+    if (!isSafeRef(sessionSuffix)) {
+      return void 0;
+    }
+    const identity = this.dynamicDemoIdentityByBaseToken.get(baseToken);
+    if (identity === void 0) {
+      return void 0;
+    }
+    const staffRef = `${identity.staffRef}:${sessionSuffix}`;
+    const sessionEpochRef = `staff-session:${baseToken}:${sessionSuffix}`;
+    const subjectBindingVersionRef = `subject-binding-version:${staffRef}`;
+    if (!isSafeRef(staffRef) || !isSafeRef(sessionEpochRef) || !isSafeRef(subjectBindingVersionRef)) {
+      return void 0;
+    }
+    return {
+      ...cloneIdentity(identity),
+      staffRef,
+      sessionEpochRef,
+      subjectBindingVersionRef
+    };
+  }
 };
-var demoStaffSessions = [
+var baseDemoStaffSessions = [
   {
     token: "dev-reviewer-token",
     identity: staffIdentity({
@@ -44414,13 +44496,9 @@ var demoStaffSessions = [
       practiceLocationLabel: demoPractice2.localityLabel,
       roleScopeRefs: ["clinical_observer"]
     })
-  },
-  ...demoClinicianAccounts2.map((account) => ({
-    token: account.staffSessionToken,
-    identity: staffIdentity(account.staffIdentity)
-  }))
+  }
 ];
-var demoStaffCredentials = [
+var baseDemoStaffCredentials = [
   {
     token: "dev-reviewer-token",
     password: "reviewer-demo",
@@ -44435,12 +44513,7 @@ var demoStaffCredentials = [
     token: "dev-observer-token",
     password: "observer-demo",
     credentials: ["clin-0100", "clinical.observer@example.test", "observer"]
-  },
-  ...demoClinicianAccounts2.map((account) => ({
-    token: account.staffSessionToken,
-    password: account.password,
-    credentials: account.acceptedCredentials
-  }))
+  }
 ];
 var rawUrlSchemePattern5 = /\b(?:https?|file|data|javascript|vbscript):/iu;
 function normalizeStaffCredential(value) {
@@ -44449,33 +44522,140 @@ function normalizeStaffCredential(value) {
 function hasDemoCredential(credentials, credential) {
   return credentials.some((candidate) => candidate === credential);
 }
-function dynamicDemoStaffIdentityFor(token2) {
-  const separatorIndex = token2.indexOf(":");
-  if (separatorIndex === -1) {
-    return void 0;
+function loadClinicalStaffDirectory(persistenceFile) {
+  const normalizedFile = normalizedPersistenceFile(persistenceFile);
+  const loaded = normalizedFile === void 0 ? void 0 : loadClinicalStaffDirectoryFromDisk(normalizedFile);
+  const snapshot = mergeClinicalStaffDirectorySnapshot(loaded ?? seedClinicalStaffDirectorySnapshot());
+  if (normalizedFile !== void 0) {
+    mkdirSync(dirname(normalizedFile), { recursive: true });
+    persistClinicalStaffDirectorySnapshot(normalizedFile, snapshot);
   }
-  const baseToken = token2.slice(0, separatorIndex);
-  const sessionSuffix = token2.slice(separatorIndex + 1);
-  if (!isSafeRef(sessionSuffix)) {
-    return void 0;
+  return snapshot;
+}
+function seedClinicalStaffDirectorySnapshot() {
+  return {
+    schemaVersion: "1.0",
+    accounts: demoClinicianAccounts2.map(snapshotClinicianAccount)
+  };
+}
+function mergeClinicalStaffDirectorySnapshot(snapshot) {
+  const seed = seedClinicalStaffDirectorySnapshot();
+  const existingByClinicianId = new Map(snapshot.accounts.map((account) => [account.clinicianId, account]));
+  const seededIds = new Set(seed.accounts.map((account) => account.clinicianId));
+  const seededAccounts = seed.accounts.map((seedAccount) => {
+    const existing = existingByClinicianId.get(seedAccount.clinicianId);
+    return existing === void 0 ? seedAccount : mergeClinicianAccount(seedAccount, existing);
+  });
+  const additionalAccounts = snapshot.accounts.filter((account) => !seededIds.has(account.clinicianId)).map(snapshotClinicianAccount);
+  return {
+    schemaVersion: "1.0",
+    accounts: [...seededAccounts, ...additionalAccounts]
+  };
+}
+function mergeClinicianAccount(seed, existing) {
+  return snapshotClinicianAccount({
+    ...seed,
+    ...existing,
+    acceptedCredentials: existing.acceptedCredentials.length > 0 ? existing.acceptedCredentials : seed.acceptedCredentials,
+    staffIdentity: staffIdentity({
+      ...seed.staffIdentity,
+      ...existing.staffIdentity,
+      roleScopeRefs: existing.staffIdentity.roleScopeRefs.length > 0 ? existing.staffIdentity.roleScopeRefs : seed.staffIdentity.roleScopeRefs
+    }),
+    pilotProfile: {
+      ...seed.pilotProfile,
+      ...existing.pilotProfile,
+      baseAddressLines: existing.pilotProfile.baseAddressLines.length > 0 ? existing.pilotProfile.baseAddressLines : seed.pilotProfile.baseAddressLines
+    }
+  });
+}
+function normalizedPersistenceFile(value) {
+  const normalized = value?.trim();
+  return normalized === void 0 || normalized.length === 0 ? void 0 : normalized;
+}
+function loadClinicalStaffDirectoryFromDisk(filePath) {
+  let serialized;
+  try {
+    serialized = readFileSync(filePath, "utf8");
+  } catch (error) {
+    if (isNodeErrorCode(error, "ENOENT")) {
+      return void 0;
+    }
+    throw error;
   }
-  const demoSession = demoStaffSessions.find((entry) => entry.token === baseToken);
-  if (demoSession === void 0) {
-    return void 0;
+  let parsed;
+  try {
+    parsed = JSON.parse(serialized);
+  } catch (error) {
+    throw new Error(`Clinical staff directory persistence file at ${filePath} is not valid JSON.`, { cause: error });
   }
-  const identity = cloneIdentity(demoSession.identity);
-  const staffRef = `${identity.staffRef}:${sessionSuffix}`;
-  const sessionEpochRef = `staff-session:${baseToken}:${sessionSuffix}`;
-  const subjectBindingVersionRef = `subject-binding-version:${staffRef}`;
-  if (!isSafeRef(staffRef) || !isSafeRef(sessionEpochRef) || !isSafeRef(subjectBindingVersionRef)) {
-    return void 0;
+  return parseClinicalStaffDirectorySnapshot(parsed, filePath);
+}
+function parseClinicalStaffDirectorySnapshot(value, filePath) {
+  if (!isRecord22(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.accounts)) {
+    throw new Error(`Clinical staff directory persistence file at ${filePath} does not match the staff directory schema.`);
   }
   return {
-    ...identity,
-    staffRef,
-    sessionEpochRef,
-    subjectBindingVersionRef
+    schemaVersion: "1.0",
+    accounts: value.accounts.map((account, index) => {
+      if (!isDemoClinicianAccount(account)) {
+        throw new Error(`Clinical staff directory persistence file at ${filePath} has an invalid account at index ${index}.`);
+      }
+      return snapshotClinicianAccount(account);
+    })
   };
+}
+function persistClinicalStaffDirectorySnapshot(filePath, snapshot) {
+  const payload = `${JSON.stringify({
+    schemaVersion: snapshot.schemaVersion,
+    accounts: snapshot.accounts.map(snapshotClinicianAccount)
+  })}
+`;
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+  try {
+    writeFileSync(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
+    renameSync(tempPath, filePath);
+  } catch (error) {
+    rmSync(tempPath, { force: true });
+    throw error;
+  }
+}
+function snapshotClinicianAccount(account) {
+  return {
+    clinicianId: account.clinicianId,
+    displayName: account.displayName,
+    staffCredential: account.staffCredential,
+    emailAddress: account.emailAddress,
+    password: account.password,
+    staffSessionToken: account.staffSessionToken,
+    acceptedCredentials: [...account.acceptedCredentials],
+    practiceRef: account.practiceRef,
+    practiceLabel: account.practiceLabel,
+    staffIdentity: {
+      ...account.staffIdentity,
+      roleScopeRefs: [...account.staffIdentity.roleScopeRefs]
+    },
+    pilotProfile: {
+      ...account.pilotProfile,
+      baseAddressLines: [...account.pilotProfile.baseAddressLines],
+      ...account.pilotProfile.profileImage === void 0 ? {} : { profileImage: { ...account.pilotProfile.profileImage } }
+    }
+  };
+}
+function isDemoClinicianAccount(value) {
+  return isRecord22(value) && typeof value.clinicianId === "string" && typeof value.displayName === "string" && typeof value.staffCredential === "string" && typeof value.emailAddress === "string" && typeof value.password === "string" && typeof value.staffSessionToken === "string" && Array.isArray(value.acceptedCredentials) && value.acceptedCredentials.length > 0 && value.acceptedCredentials.every(isSafeCredentialText) && typeof value.practiceRef === "string" && typeof value.practiceLabel === "string" && isDemoStaffIdentity(value.staffIdentity) && isDemoStaffPilotProfile(value.pilotProfile);
+}
+function isDemoStaffIdentity(value) {
+  return isRecord22(value) && typeof value.state === "string" && isStaffState(value.state) && typeof value.staffRef === "string" && typeof value.displayName === "string" && Array.isArray(value.roleScopeRefs) && value.roleScopeRefs.every((role) => typeof role === "string") && (value.practiceLabel === void 0 || typeof value.practiceLabel === "string") && isOptionalStaffDisplayText(value.practiceLabel, 120) && (value.practiceLocationLabel === void 0 || typeof value.practiceLocationLabel === "string") && isOptionalStaffDisplayText(value.practiceLocationLabel, 80) && (value.sessionEpochRef === void 0 || typeof value.sessionEpochRef === "string") && (value.subjectBindingVersionRef === void 0 || typeof value.subjectBindingVersionRef === "string");
+}
+function isDemoStaffPilotProfile(value) {
+  return isRecord22(value) && value.dataClassification === "fictional_demo_staff" && typeof value.roleTitle === "string" && typeof value.departmentLabel === "string" && typeof value.staffNumber === "string" && typeof value.professionalRegistration === "string" && typeof value.workPhoneNumber === "string" && Array.isArray(value.baseAddressLines) && value.baseAddressLines.every((line) => typeof line === "string") && typeof value.postcode === "string" && typeof value.workingHoursLabel === "string" && (value.profileImage === void 0 || isDemoProfileImage(value.profileImage));
+}
+function isDemoProfileImage(value) {
+  return isRecord22(value) && typeof value.src === "string" && typeof value.alt === "string";
+}
+function isSafeCredentialText(value) {
+  return typeof value === "string" && value.length > 0 && value.length <= 160 && !rawUrlSchemePattern5.test(value);
 }
 function parseStaffSessionCatalog(catalog) {
   const entries = catalog.split(";").map((entry) => entry.trim()).filter((entry) => entry.length > 0);
@@ -44556,6 +44736,12 @@ function isSafeRef(value) {
 }
 function isSafeRoleRef(value) {
   return value.length > 0 && value.length <= 80 && /^[A-Za-z0-9._:-]+$/u.test(value);
+}
+function isRecord22(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isNodeErrorCode(error, code) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code;
 }
 
 // services/api-gateway/src/services/deep-link-resolution.service.ts
@@ -51070,8 +51256,8 @@ function action2(label, href, tone, helper) {
 
 // services/api-gateway/src/services/demo-patient-message.service.ts
 import { createHash as createHash14 } from "node:crypto";
-import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { mkdirSync as mkdirSync2, readFileSync as readFileSync2, renameSync as renameSync2, rmSync as rmSync2, writeFileSync as writeFileSync2 } from "node:fs";
+import { dirname as dirname2 } from "node:path";
 var DemoPatientMessageService = class {
   enabled;
   now;
@@ -51081,9 +51267,9 @@ var DemoPatientMessageService = class {
   constructor(options = {}) {
     this.enabled = options.enabled ?? true;
     this.now = options.now ?? (() => /* @__PURE__ */ new Date());
-    this.persistenceFile = normalizedPersistenceFile(options.persistenceFile);
+    this.persistenceFile = normalizedPersistenceFile2(options.persistenceFile);
     if (this.persistenceFile !== void 0) {
-      mkdirSync(dirname(this.persistenceFile), { recursive: true });
+      mkdirSync2(dirname2(this.persistenceFile), { recursive: true });
       this.replaceWithSnapshot(loadSnapshotFromDisk(this.persistenceFile));
     }
   }
@@ -51266,10 +51452,10 @@ var DemoPatientMessageService = class {
 `;
     const tempPath = `${this.persistenceFile}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
     try {
-      writeFileSync(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
-      renameSync(tempPath, this.persistenceFile);
+      writeFileSync2(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
+      renameSync2(tempPath, this.persistenceFile);
     } catch (error) {
-      rmSync(tempPath, { force: true });
+      rmSync2(tempPath, { force: true });
       throw error;
     }
   }
@@ -51277,16 +51463,16 @@ var DemoPatientMessageService = class {
 function demoPatientForBinding(binding) {
   return demoPatientAccounts2.find((account) => account.requestBinding.sessionRef === binding.sessionRef && account.requestBinding.csrfToken === binding.csrfToken);
 }
-function normalizedPersistenceFile(value) {
+function normalizedPersistenceFile2(value) {
   const normalized = value?.trim();
   return normalized === void 0 || normalized.length === 0 ? void 0 : normalized;
 }
 function loadSnapshotFromDisk(filePath) {
   let serialized;
   try {
-    serialized = readFileSync(filePath, "utf8");
+    serialized = readFileSync2(filePath, "utf8");
   } catch (error) {
-    if (isNodeErrorCode(error, "ENOENT")) {
+    if (isNodeErrorCode2(error, "ENOENT")) {
       return emptyMessageSnapshot();
     }
     throw error;
@@ -51300,7 +51486,7 @@ function loadSnapshotFromDisk(filePath) {
   return parseMessageSnapshot(parsed, filePath);
 }
 function parseMessageSnapshot(value, filePath) {
-  if (!isRecord22(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.threads) || !Array.isArray(value.idempotencyRecords)) {
+  if (!isRecord23(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.threads) || !Array.isArray(value.idempotencyRecords)) {
     throw new Error(`Patient message persistence file at ${filePath} does not match the message snapshot schema.`);
   }
   const threads = value.threads.map((thread, index) => {
@@ -51348,10 +51534,10 @@ function snapshotThread(thread) {
   };
 }
 function isMessageThread(value) {
-  return isRecord22(value) && isSafeSnapshotText(value.threadId, 160) && isKnownDemoPatientId(value.patientId) && isSafeSnapshotText(value.patientSubjectRef, 160) && isSafeSnapshotText(value.patientDisplayName, 120) && isSafeSnapshotText(value.practiceLabel, 160) && isSafeSnapshotText(value.staffRef, 160) && isSafeSnapshotText(value.staffDisplayName, 120) && isSafeSnapshotText(value.messageText, 1e3) && isIsoTimestamp(value.recordedAt) && (value.patientReplyText === void 0 || isSafeSnapshotText(value.patientReplyText, 1e3)) && (value.patientReplyRecordedAt === void 0 || isIsoTimestamp(value.patientReplyRecordedAt));
+  return isRecord23(value) && isSafeSnapshotText(value.threadId, 160) && isKnownDemoPatientId(value.patientId) && isSafeSnapshotText(value.patientSubjectRef, 160) && isSafeSnapshotText(value.patientDisplayName, 120) && isSafeSnapshotText(value.practiceLabel, 160) && isSafeSnapshotText(value.staffRef, 160) && isSafeSnapshotText(value.staffDisplayName, 120) && isSafeSnapshotText(value.messageText, 1e3) && isIsoTimestamp(value.recordedAt) && (value.patientReplyText === void 0 || isSafeSnapshotText(value.patientReplyText, 1e3)) && (value.patientReplyRecordedAt === void 0 || isIsoTimestamp(value.patientReplyRecordedAt));
 }
 function isIdempotencySnapshotRecord(value) {
-  return isRecord22(value) && isSafeSnapshotText(value.idempotencyKey, 240) && isSafeSnapshotText(value.requestFingerprint, 128) && isSafeSnapshotText(value.threadId, 160);
+  return isRecord23(value) && isSafeSnapshotText(value.idempotencyKey, 240) && isSafeSnapshotText(value.requestFingerprint, 128) && isSafeSnapshotText(value.threadId, 160);
 }
 function isKnownDemoPatientId(value) {
   return typeof value === "string" && demoPatientAccountById(value) !== void 0;
@@ -51375,10 +51561,10 @@ function isIsoTimestamp(value) {
   const parsed = Date.parse(value);
   return !Number.isNaN(parsed) && new Date(parsed).toISOString() === value;
 }
-function isRecord22(value) {
+function isRecord23(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-function isNodeErrorCode(error, code) {
+function isNodeErrorCode2(error, code) {
   return typeof error === "object" && error !== null && "code" in error && error.code === code;
 }
 function receiptForThread(thread) {
@@ -51443,7 +51629,7 @@ function replaceUnsafeMessageControlCharacters(value) {
 
 // services/api-gateway/src/services/file-backed-intake-draft.repository.ts
 import { mkdir, open, readFile, rename, rm, stat, writeFile } from "node:fs/promises";
-import { dirname as dirname2 } from "node:path";
+import { dirname as dirname3 } from "node:path";
 
 // services/api-gateway/src/services/intake-draft.repository.ts
 function cloneEnvelope(snapshot) {
@@ -52435,7 +52621,7 @@ var FileBackedIntakeDraftRepository = class extends InMemoryIntakeDraftRepositor
     }
   }
   async withFileLock(operation) {
-    await mkdir(dirname2(this.filePath), { recursive: true, mode: 448 });
+    await mkdir(dirname3(this.filePath), { recursive: true, mode: 448 });
     const lock = await this.acquireLock();
     try {
       return await operation();
@@ -52450,7 +52636,7 @@ var FileBackedIntakeDraftRepository = class extends InMemoryIntakeDraftRepositor
       try {
         return await open(this.lockPath, "wx", 384);
       } catch (error) {
-        if (!isNodeErrorCode2(error, "EEXIST")) {
+        if (!isNodeErrorCode3(error, "EEXIST")) {
           throw error;
         }
         await this.removeStaleLock(Date.now());
@@ -52468,7 +52654,7 @@ var FileBackedIntakeDraftRepository = class extends InMemoryIntakeDraftRepositor
         await rm(this.lockPath, { force: true });
       }
     } catch (error) {
-      if (!isNodeErrorCode2(error, "ENOENT")) {
+      if (!isNodeErrorCode3(error, "ENOENT")) {
         throw error;
       }
     }
@@ -52478,7 +52664,7 @@ var FileBackedIntakeDraftRepository = class extends InMemoryIntakeDraftRepositor
     try {
       serialized = await readFile(this.filePath, "utf8");
     } catch (error) {
-      if (isNodeErrorCode2(error, "ENOENT")) {
+      if (isNodeErrorCode3(error, "ENOENT")) {
         this.replaceWithSnapshot(emptyIntakeDraftRepositorySnapshot());
         return;
       }
@@ -52518,7 +52704,7 @@ function parseIntakeDraftRepositorySnapshot(value, sourceDescription) {
   return normalized;
 }
 function normalizeIntakeDraftRepositorySnapshot(value) {
-  if (!isRecord23(value) || value.schemaVersion !== "1.0" || !isRecord23(value.records)) {
+  if (!isRecord24(value) || value.schemaVersion !== "1.0" || !isRecord24(value.records)) {
     return value;
   }
   return {
@@ -52534,13 +52720,13 @@ function normalizeIntakeDraftRepositorySnapshot(value) {
   };
 }
 function intakeDraftRepositorySnapshotIssues(value) {
-  if (!isRecord23(value)) {
+  if (!isRecord24(value)) {
     return ["snapshot must be an object"];
   }
   if (value.schemaVersion !== "1.0") {
     return ["schemaVersion must be 1.0"];
   }
-  if (!isRecord23(value.records)) {
+  if (!isRecord24(value.records)) {
     return ["records must be an object"];
   }
   const records = value.records;
@@ -52596,7 +52782,7 @@ function semanticSnapshotIssues(snapshot) {
   const patchFingerprintsByIdempotency = new Map(records.patchRequestFingerprintByIdempotency);
   const submitFingerprintsByIdempotency = new Map(records.submitRequestFingerprintByIdempotency);
   for (const [draftPublicId, envelope] of records.envelopesByDraftPublicId) {
-    if (!isRecord23(envelope) || envelope.draftPublicId !== draftPublicId || typeof envelope.submissionEnvelopeId !== "string") {
+    if (!isRecord24(envelope) || envelope.draftPublicId !== draftPublicId || typeof envelope.submissionEnvelopeId !== "string") {
       issues.push(`records.envelopesByDraftPublicId has invalid envelope for ${draftPublicId}`);
       continue;
     }
@@ -52611,7 +52797,7 @@ function semanticSnapshotIssues(snapshot) {
     }
   }
   for (const [submissionEnvelopeRef, state] of records.persistedStatesBySubmissionEnvelopeRef) {
-    if (!isRecord23(state) || state.submissionEnvelopeRef !== submissionEnvelopeRef) {
+    if (!isRecord24(state) || state.submissionEnvelopeRef !== submissionEnvelopeRef) {
       issues.push(`records.persistedStatesBySubmissionEnvelopeRef has invalid state for ${submissionEnvelopeRef}`);
     } else if (!hasEnvelopeForSubmissionRef(envelopesByDraftPublicId, submissionEnvelopeRef)) {
       issues.push(`records.persistedStatesBySubmissionEnvelopeRef has orphan state ${submissionEnvelopeRef}`);
@@ -52623,7 +52809,7 @@ function semanticSnapshotIssues(snapshot) {
     }
   }
   for (const [publicRef, lease] of records.leasesByPublicRef) {
-    if (!isRecord23(lease) || lease.publicRef !== publicRef || !isRecord23(lease.snapshot) || typeof lease.snapshot.submissionEnvelopeRef !== "string") {
+    if (!isRecord24(lease) || lease.publicRef !== publicRef || !isRecord24(lease.snapshot) || typeof lease.snapshot.submissionEnvelopeRef !== "string") {
       issues.push(`records.leasesByPublicRef has invalid lease for ${publicRef}`);
     } else if (!hasEnvelopeForSubmissionRef(envelopesByDraftPublicId, lease.snapshot.submissionEnvelopeRef)) {
       issues.push(`records.leasesByPublicRef has orphan lease ${publicRef}`);
@@ -52828,7 +53014,7 @@ function draftSaveSettlementIssues(entries, mutationRecordsById) {
 }
 function submissionPromotionRecordIssues(entries, envelopesByDraftPublicId) {
   return entries.flatMap(([key, record2]) => {
-    if (!isRecord23(record2) || record2.submissionPromotionRecordId !== key) {
+    if (!isRecord24(record2) || record2.submissionPromotionRecordId !== key) {
       return [`records.promotionRecordsById has invalid record ${key}`];
     }
     const validation = validateSubmissionPromotionRecordSnapshot(record2);
@@ -52856,7 +53042,7 @@ function patientReceiptEnvelopeIssues(entries, promotionsById) {
   });
 }
 function isReceiptBoundPromotionRecord(receipt, value) {
-  return isRecord23(value) && value.submissionPromotionRecordId === receipt.submissionPromotionRecordRef && value.requestPublicId === receipt.requestPublicId && value.requestId === receipt.requestId && value.requestLineageRef === receipt.requestLineageRef;
+  return isRecord24(value) && value.submissionPromotionRecordId === receipt.submissionPromotionRecordRef && value.requestPublicId === receipt.requestPublicId && value.requestId === receipt.requestId && value.requestLineageRef === receipt.requestLineageRef;
 }
 function expectedDraftMutationRecordId(record2) {
   return `draft-mutation-record:${stableHashParts([
@@ -52880,28 +53066,28 @@ function expectedDraftSaveSettlementId(settlement) {
   ])}`;
 }
 function isAttachmentRecordSnapshot(value) {
-  return isRecord23(value) && nonEmptyString7(value.attachmentPublicId) && nonEmptyString7(value.submissionEnvelopeRef) && nonEmptyString7(value.originalFilenameLabel) && nonEmptyString7(value.declaredContentType) && optionalNonEmptyString(value.verifiedContentType) && typeof value.byteSize === "number" && Number.isSafeInteger(value.byteSize) && value.byteSize > 0 && optionalObjectChecksum(value.checksum) && typeof value.scanState === "string" && attachmentScanStates.includes(value.scanState) && optionalNonEmptyString(value.objectManifestRef) && optionalNonEmptyString(value.quarantineObjectRef) && optionalNonEmptyString(value.durableArtifactRef) && optionalNonEmptyString(value.thumbnailArtifactRef) && optionalNonEmptyString(value.linkedDocumentReferenceRef) && nonEmptyString7(value.patientSafeMessage) && typeof value.createdAt === "string" && isIsoDateTime(value.createdAt) && typeof value.updatedAt === "string" && isIsoDateTime(value.updatedAt);
+  return isRecord24(value) && nonEmptyString7(value.attachmentPublicId) && nonEmptyString7(value.submissionEnvelopeRef) && nonEmptyString7(value.originalFilenameLabel) && nonEmptyString7(value.declaredContentType) && optionalNonEmptyString(value.verifiedContentType) && typeof value.byteSize === "number" && Number.isSafeInteger(value.byteSize) && value.byteSize > 0 && optionalObjectChecksum(value.checksum) && typeof value.scanState === "string" && attachmentScanStates.includes(value.scanState) && optionalNonEmptyString(value.objectManifestRef) && optionalNonEmptyString(value.quarantineObjectRef) && optionalNonEmptyString(value.durableArtifactRef) && optionalNonEmptyString(value.thumbnailArtifactRef) && optionalNonEmptyString(value.linkedDocumentReferenceRef) && nonEmptyString7(value.patientSafeMessage) && typeof value.createdAt === "string" && isIsoDateTime(value.createdAt) && typeof value.updatedAt === "string" && isIsoDateTime(value.updatedAt);
 }
 function isObjectManifestSnapshot(value) {
-  return isRecord23(value) && nonEmptyString7(value.manifestRef) && nonEmptyString7(value.tenantId) && nonEmptyString7(value.artifactRef) && Array.isArray(value.entries) && value.entries.every(isObjectManifestEntrySnapshot) && objectChecksum(value.manifestHash) && typeof value.createdAt === "string" && isIsoDateTime(value.createdAt);
+  return isRecord24(value) && nonEmptyString7(value.manifestRef) && nonEmptyString7(value.tenantId) && nonEmptyString7(value.artifactRef) && Array.isArray(value.entries) && value.entries.every(isObjectManifestEntrySnapshot) && objectChecksum(value.manifestHash) && typeof value.createdAt === "string" && isIsoDateTime(value.createdAt);
 }
 function isObjectManifestEntrySnapshot(value) {
-  return isRecord23(value) && nonEmptyString7(value.artifactRef) && nonEmptyString7(value.tenantId) && nonEmptyString7(value.bucketRef) && nonEmptyString7(value.objectKey) && nonEmptyString7(value.contentType) && typeof value.byteSize === "number" && Number.isSafeInteger(value.byteSize) && value.byteSize >= 0 && objectChecksum(value.checksum) && nonEmptyString7(value.storageClass) && nonEmptyString7(value.captureClass) && nonEmptyString7(value.visibilityTier) && nonEmptyString7(value.scanState) && typeof value.createdAt === "string" && isIsoDateTime(value.createdAt) && optionalNonEmptyString(value.sourceArtifactRef) && isObjectDerivationMetadataSnapshot(value.derivationMetadata);
+  return isRecord24(value) && nonEmptyString7(value.artifactRef) && nonEmptyString7(value.tenantId) && nonEmptyString7(value.bucketRef) && nonEmptyString7(value.objectKey) && nonEmptyString7(value.contentType) && typeof value.byteSize === "number" && Number.isSafeInteger(value.byteSize) && value.byteSize >= 0 && objectChecksum(value.checksum) && nonEmptyString7(value.storageClass) && nonEmptyString7(value.captureClass) && nonEmptyString7(value.visibilityTier) && nonEmptyString7(value.scanState) && typeof value.createdAt === "string" && isIsoDateTime(value.createdAt) && optionalNonEmptyString(value.sourceArtifactRef) && isObjectDerivationMetadataSnapshot(value.derivationMetadata);
 }
 function isObjectDerivationMetadataSnapshot(value) {
-  return value === void 0 || isRecord23(value) && nonEmptyString7(value.derivationClass) && nonEmptyString7(value.sourceArtifactRef) && objectChecksum(value.sourceChecksum) && nonEmptyString7(value.derivationVersionRef) && nonEmptyString7(value.materialityClass) && typeof value.derivedAt === "string" && isIsoDateTime(value.derivedAt);
+  return value === void 0 || isRecord24(value) && nonEmptyString7(value.derivationClass) && nonEmptyString7(value.sourceArtifactRef) && objectChecksum(value.sourceChecksum) && nonEmptyString7(value.derivationVersionRef) && nonEmptyString7(value.materialityClass) && typeof value.derivedAt === "string" && isIsoDateTime(value.derivedAt);
 }
 function isDraftMutationRecordSnapshot(value) {
-  return isRecord23(value) && nonEmptyString7(value.mutationRecordId) && nonEmptyString7(value.submissionEnvelopeRef) && nonEmptyString7(value.clientCommandId) && nonEmptyString7(value.idempotencyKey) && typeof value.draftVersionBefore === "number" && typeof value.draftVersionAfter === "number" && optionalNonEmptyString(value.fieldDeltaRef) && optionalNonEmptyString(value.stepMarkerDeltaRef) && optionalNonEmptyString(value.attachmentDeltaRef) && optionalNonEmptyString(value.identityContextDeltaRef) && typeof value.createdAt === "string";
+  return isRecord24(value) && nonEmptyString7(value.mutationRecordId) && nonEmptyString7(value.submissionEnvelopeRef) && nonEmptyString7(value.clientCommandId) && nonEmptyString7(value.idempotencyKey) && typeof value.draftVersionBefore === "number" && typeof value.draftVersionAfter === "number" && optionalNonEmptyString(value.fieldDeltaRef) && optionalNonEmptyString(value.stepMarkerDeltaRef) && optionalNonEmptyString(value.attachmentDeltaRef) && optionalNonEmptyString(value.identityContextDeltaRef) && typeof value.createdAt === "string";
 }
 function isDraftSaveSettlementSnapshot(value) {
-  return isRecord23(value) && nonEmptyString7(value.settlementId) && nonEmptyString7(value.mutationRecordRef) && nonEmptyString7(value.ackState) && optionalNonEmptyString(value.projectionVersionRef) && optionalNonEmptyString(value.experienceContinuityEvidenceRef) && optionalNonEmptyString(value.recoveryRouteRef) && typeof value.recordedAt === "string";
+  return isRecord24(value) && nonEmptyString7(value.settlementId) && nonEmptyString7(value.mutationRecordRef) && nonEmptyString7(value.ackState) && optionalNonEmptyString(value.projectionVersionRef) && optionalNonEmptyString(value.experienceContinuityEvidenceRef) && optionalNonEmptyString(value.recoveryRouteRef) && typeof value.recordedAt === "string";
 }
 function isPatientReceiptEnvelopeSnapshot(value) {
-  return isRecord23(value) && nonEmptyString7(value.patientReceiptEnvelopeId) && nonEmptyString7(value.requestPublicId) && nonEmptyString7(value.trackingRef) && nonEmptyString7(value.submissionPromotionRecordRef) && nonEmptyString7(value.requestId) && nonEmptyString7(value.requestLineageRef) && nonEmptyString7(value.receiptConsistencyKey) && nonEmptyString7(value.statusConsistencyKey) && typeof value.safetyState === "string" && isPatientReceiptSafetyState(value.safetyState) && typeof value.receiptState === "string" && isPatientReceiptState2(value.receiptState) && typeof value.outcomeKind === "string" && isPatientReceiptOutcomeKind2(value.outcomeKind) && typeof value.freshnessState === "string" && isPatientReceiptFreshnessState2(value.freshnessState) && typeof value.freshnessCheckedAt === "string" && isIsoDateTime(value.freshnessCheckedAt) && nonEmptyString7(value.etaLabel) && nonEmptyString7(value.nextStepLabel) && nonEmptyString7(value.visibilitySafeSummaryRef) && nonEmptyString7(value.presentationArtifactRef) && isPatientReceiptCopy(value.copy) && optionalNonEmptyString(value.supersedesReceiptEnvelopeRef) && optionalNonEmptyString(value.recoveryReasonRef) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt) && nonEmptyString7(value.receiptTupleHash);
+  return isRecord24(value) && nonEmptyString7(value.patientReceiptEnvelopeId) && nonEmptyString7(value.requestPublicId) && nonEmptyString7(value.trackingRef) && nonEmptyString7(value.submissionPromotionRecordRef) && nonEmptyString7(value.requestId) && nonEmptyString7(value.requestLineageRef) && nonEmptyString7(value.receiptConsistencyKey) && nonEmptyString7(value.statusConsistencyKey) && typeof value.safetyState === "string" && isPatientReceiptSafetyState(value.safetyState) && typeof value.receiptState === "string" && isPatientReceiptState2(value.receiptState) && typeof value.outcomeKind === "string" && isPatientReceiptOutcomeKind2(value.outcomeKind) && typeof value.freshnessState === "string" && isPatientReceiptFreshnessState2(value.freshnessState) && typeof value.freshnessCheckedAt === "string" && isIsoDateTime(value.freshnessCheckedAt) && nonEmptyString7(value.etaLabel) && nonEmptyString7(value.nextStepLabel) && nonEmptyString7(value.visibilitySafeSummaryRef) && nonEmptyString7(value.presentationArtifactRef) && isPatientReceiptCopy(value.copy) && optionalNonEmptyString(value.supersedesReceiptEnvelopeRef) && optionalNonEmptyString(value.recoveryReasonRef) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt) && nonEmptyString7(value.receiptTupleHash);
 }
 function isPatientReceiptCopy(value) {
-  return isRecord23(value) && nonEmptyString7(value.heading) && nonEmptyString7(value.summary) && nonEmptyString7(value.safetyLabel) && nonEmptyString7(value.etaLabel) && nonEmptyString7(value.nextStepLabel) && nonEmptyString7(value.freshnessLabel);
+  return isRecord24(value) && nonEmptyString7(value.heading) && nonEmptyString7(value.summary) && nonEmptyString7(value.safetyLabel) && nonEmptyString7(value.etaLabel) && nonEmptyString7(value.nextStepLabel) && nonEmptyString7(value.freshnessLabel);
 }
 function hasEnvelopeForSubmissionRef(envelopesByDraftPublicId, submissionEnvelopeRef) {
   return [...envelopesByDraftPublicId.values()].some((envelope) => envelope.submissionEnvelopeId === submissionEnvelopeRef);
@@ -52958,7 +53144,7 @@ function draftReferenceIssues(entries, target, targetIdField, envelopesByDraftPu
       return [`${path} has invalid ref for ${draftPublicId}`];
     }
     const targetRecord = target.get(value);
-    return isRecord23(targetRecord) && targetRecord[targetIdField] === value ? [] : [`${path} has invalid ref for ${draftPublicId}`];
+    return isRecord24(targetRecord) && targetRecord[targetIdField] === value ? [] : [`${path} has invalid ref for ${draftPublicId}`];
   });
 }
 function submitResponseIdempotencyIssues(entries, envelopesByDraftPublicId, promotionsById, path) {
@@ -52996,8 +53182,8 @@ function submitResponsePromotionBindingIssues(response, promotionsById, path, ke
   if (requestPublicId === void 0) {
     return [];
   }
-  const promotionRecord = [...promotionsById.values()].find((record2) => isRecord23(record2) && record2.requestPublicId === requestPublicId);
-  return isRecord23(promotionRecord) && promotionRecord.draftPublicId === response.settlement.draftPublicId && response.settlement.trackingRef === requestPublicId && submitResponseLinksMatchRequest(response) ? [] : [`${path} has invalid response for ${key}`];
+  const promotionRecord = [...promotionsById.values()].find((record2) => isRecord24(record2) && record2.requestPublicId === requestPublicId);
+  return isRecord24(promotionRecord) && promotionRecord.draftPublicId === response.settlement.draftPublicId && response.settlement.trackingRef === requestPublicId && submitResponseLinksMatchRequest(response) ? [] : [`${path} has invalid response for ${key}`];
 }
 function submitResponseLinksMatchRequest(response) {
   const requestPublicId = response.settlement.requestPublicId;
@@ -53010,7 +53196,7 @@ function submitResponseLinksMatchRequest(response) {
 function requestReferenceIssues(entries, target, targetIdField, requestIdField, path) {
   return entries.flatMap(([requestPublicId, recordId]) => {
     const record2 = target.get(recordId);
-    return isRecord23(record2) && record2[targetIdField] === recordId && record2[requestIdField] === requestPublicId ? [] : [`${path} has invalid ref for ${requestPublicId}`];
+    return isRecord24(record2) && record2[targetIdField] === recordId && record2[requestIdField] === requestPublicId ? [] : [`${path} has invalid ref for ${requestPublicId}`];
   });
 }
 function submissionReferenceListIssues(entries, target, targetIdField, envelopesByDraftPublicId, path) {
@@ -53022,7 +53208,7 @@ function submissionReferenceListIssues(entries, target, targetIdField, envelopes
     }
     for (const ref4 of refs) {
       const targetRecord = target.get(ref4);
-      if (!isRecord23(targetRecord) || targetRecord[targetIdField] !== ref4) {
+      if (!isRecord24(targetRecord) || targetRecord[targetIdField] !== ref4) {
         entryIssues.push(`${path} references invalid record ${ref4}`);
       }
     }
@@ -53038,7 +53224,7 @@ function attachmentIndexIssues(entries, attachmentRecordsById, envelopesByDraftP
     }
     for (const attachmentRef of attachmentRefs) {
       const record2 = attachmentRecordsById.get(attachmentRef);
-      if (!isRecord23(record2) || record2.attachmentPublicId !== attachmentRef) {
+      if (!isRecord24(record2) || record2.attachmentPublicId !== attachmentRef) {
         entryIssues.push(`records.attachmentRecordIdsByDraftPublicId references invalid attachment ${attachmentRef}`);
       }
     }
@@ -53046,11 +53232,11 @@ function attachmentIndexIssues(entries, attachmentRecordsById, envelopesByDraftP
   });
 }
 function keyedFieldIssues(entries, field, path, _target) {
-  return entries.flatMap(([key, value]) => isRecord23(value) && value[field] === key ? [] : [`${path} has invalid key ${key}`]);
+  return entries.flatMap(([key, value]) => isRecord24(value) && value[field] === key ? [] : [`${path} has invalid key ${key}`]);
 }
 function simulatedUploadIssues(entries, envelopesByDraftPublicId, attachmentRecordsById) {
   return entries.flatMap(([key, upload]) => {
-    if (!isRecord23(upload) || typeof upload.draftPublicId !== "string" || typeof upload.attachmentPublicId !== "string" || !envelopesByDraftPublicId.has(upload.draftPublicId) || !Array.isArray(upload.bytes) || typeof upload.receivedAt !== "string" || !isIsoDateTime(upload.receivedAt)) {
+    if (!isRecord24(upload) || typeof upload.draftPublicId !== "string" || typeof upload.attachmentPublicId !== "string" || !envelopesByDraftPublicId.has(upload.draftPublicId) || !Array.isArray(upload.bytes) || typeof upload.receivedAt !== "string" || !isIsoDateTime(upload.receivedAt)) {
       return [`records.simulatedUploadsByAttachmentId has invalid upload ${key}`];
     }
     const envelope = envelopesByDraftPublicId.get(upload.draftPublicId);
@@ -53061,11 +53247,11 @@ function simulatedUploadIssues(entries, envelopesByDraftPublicId, attachmentReco
     return key === expectedKey && bytesValid && attachmentMatches ? [] : [`records.simulatedUploadsByAttachmentId has invalid upload ${key}`];
   });
 }
-function isRecord23(value) {
+function isRecord24(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-function isNodeErrorCode2(error, code) {
-  return isRecord23(error) && error.code === code;
+function isNodeErrorCode3(error, code) {
+  return isRecord24(error) && error.code === code;
 }
 async function delay(durationMs) {
   await new Promise((resolve2) => {
@@ -53217,7 +53403,7 @@ function stableJsonValue(value) {
   if (Array.isArray(value)) {
     return value.map(stableJsonValue);
   }
-  if (isRecord24(value)) {
+  if (isRecord25(value)) {
     return Object.fromEntries(
       Object.entries(value).filter((entry) => entry[1] !== void 0).sort(([left], [right]) => left.localeCompare(right)).map(([key, entryValue]) => [key, stableJsonValue(entryValue)])
     );
@@ -53309,11 +53495,11 @@ function attachmentInitiationReplayMatchesRequest(record2, request) {
 function attachmentCompletionReplayRecordMatchesRequest(record2, request) {
   return record2.declaredContentType === request.declaredContentType && record2.byteSize === request.byteSize && record2.checksum === request.checksum;
 }
-function isRecord24(value) {
+function isRecord25(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function routeStateFromCreateRequest(request, journeyState) {
-  const resumeContext = isRecord24(request.resumeContext) ? request.resumeContext : void 0;
+  const resumeContext = isRecord25(request.resumeContext) ? request.resumeContext : void 0;
   const safeReturnRoute2 = typeof resumeContext?.returnRoute === "string" ? resumeContext.returnRoute : "/request/new";
   const clientInstanceRef = typeof resumeContext?.clientInstanceRef === "string" ? resumeContext.clientInstanceRef : void 0;
   return routeStateFromJourneyState(journeyState, {
@@ -57264,8 +57450,8 @@ function hashRef5(value) {
 }
 
 // services/api-gateway/src/services/patient-appointment.service.ts
-import { mkdirSync as mkdirSync2, readFileSync as readFileSync2, renameSync as renameSync2, rmSync as rmSync2, writeFileSync as writeFileSync2 } from "node:fs";
-import { dirname as dirname3 } from "node:path";
+import { mkdirSync as mkdirSync3, readFileSync as readFileSync3, renameSync as renameSync3, rmSync as rmSync3, writeFileSync as writeFileSync3 } from "node:fs";
+import { dirname as dirname4 } from "node:path";
 
 // packages/api-contracts/src/booking-projections.ts
 var defaultGeneratedAt2 = "2026-05-18T09:45:00.000Z";
@@ -58311,13 +58497,13 @@ var PatientAppointmentService = class {
   now;
   recordsByPatientId = /* @__PURE__ */ new Map();
   constructor(options = {}) {
-    this.persistenceFile = normalizedPersistenceFile2(options.persistenceFile);
+    this.persistenceFile = normalizedPersistenceFile3(options.persistenceFile);
     this.now = options.now ?? defaultNow;
     if (this.persistenceFile === void 0) {
       this.replaceWithSnapshot(seedPatientAppointmentSnapshot());
       return;
     }
-    mkdirSync2(dirname3(this.persistenceFile), { recursive: true });
+    mkdirSync3(dirname4(this.persistenceFile), { recursive: true });
     const snapshot = loadSnapshotFromDisk2(this.persistenceFile) ?? seedPatientAppointmentSnapshot();
     this.replaceWithSnapshot(snapshot);
     this.persistIfConfigured();
@@ -58384,10 +58570,10 @@ var PatientAppointmentService = class {
 `;
     const tempPath = `${this.persistenceFile}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
     try {
-      writeFileSync2(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
-      renameSync2(tempPath, this.persistenceFile);
+      writeFileSync3(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
+      renameSync3(tempPath, this.persistenceFile);
     } catch (error) {
-      rmSync2(tempPath, { force: true });
+      rmSync3(tempPath, { force: true });
       throw error;
     }
   }
@@ -58660,16 +58846,16 @@ function snapshotRecord(record2) {
     appointments: record2.appointments.map((appointment) => ({ ...appointment }))
   };
 }
-function normalizedPersistenceFile2(value) {
+function normalizedPersistenceFile3(value) {
   const normalized = value?.trim();
   return normalized === void 0 || normalized.length === 0 ? void 0 : normalized;
 }
 function loadSnapshotFromDisk2(filePath) {
   let serialized;
   try {
-    serialized = readFileSync2(filePath, "utf8");
+    serialized = readFileSync3(filePath, "utf8");
   } catch (error) {
-    if (isNodeErrorCode3(error, "ENOENT")) {
+    if (isNodeErrorCode4(error, "ENOENT")) {
       return void 0;
     }
     throw error;
@@ -58683,7 +58869,7 @@ function loadSnapshotFromDisk2(filePath) {
   return parseAppointmentSnapshot(parsed, filePath);
 }
 function parseAppointmentSnapshot(value, filePath) {
-  if (!isRecord25(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.records)) {
+  if (!isRecord26(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.records)) {
     throw new Error(`Patient appointment persistence file at ${filePath} does not match the appointment snapshot schema.`);
   }
   return {
@@ -58697,19 +58883,19 @@ function parseAppointmentSnapshot(value, filePath) {
   };
 }
 function isAppointmentRecord(value) {
-  return isRecord25(value) && typeof value.patientId === "string" && isRequestBinding(value.requestBinding) && isPracticeRecord(value.practice) && isClinicianRecord(value.clinician) && Array.isArray(value.appointments) && value.appointments.every(isStoredAppointment);
+  return isRecord26(value) && typeof value.patientId === "string" && isRequestBinding(value.requestBinding) && isPracticeRecord(value.practice) && isClinicianRecord(value.clinician) && Array.isArray(value.appointments) && value.appointments.every(isStoredAppointment);
 }
 function isRequestBinding(value) {
-  return isRecord25(value) && typeof value.sessionRef === "string" && typeof value.csrfToken === "string";
+  return isRecord26(value) && typeof value.sessionRef === "string" && typeof value.csrfToken === "string";
 }
 function isPracticeRecord(value) {
-  return isRecord25(value) && typeof value.practiceRef === "string" && typeof value.practiceLabel === "string" && typeof value.localityLabel === "string" && Array.isArray(value.addressLines) && value.addressLines.every((line) => typeof line === "string") && typeof value.postcode === "string";
+  return isRecord26(value) && typeof value.practiceRef === "string" && typeof value.practiceLabel === "string" && typeof value.localityLabel === "string" && Array.isArray(value.addressLines) && value.addressLines.every((line) => typeof line === "string") && typeof value.postcode === "string";
 }
 function isClinicianRecord(value) {
-  return isRecord25(value) && typeof value.staffRef === "string" && typeof value.displayName === "string" && typeof value.roleTitle === "string" && typeof value.departmentLabel === "string" && typeof value.workPhoneNumber === "string";
+  return isRecord26(value) && typeof value.staffRef === "string" && typeof value.displayName === "string" && typeof value.roleTitle === "string" && typeof value.departmentLabel === "string" && typeof value.workPhoneNumber === "string";
 }
 function isStoredAppointment(value) {
-  return isRecord25(value) && typeof value.appointmentId === "string" && typeof value.bookingCaseId === "string" && typeof value.title === "string" && typeof value.startAt === "string" && typeof value.durationMinutes === "number" && isAppointmentModality(value.modality) && typeof value.roomLabel === "string" && isStoredAppointmentStatus(value.status) && typeof value.clinicianTypeLabel === "string" && typeof value.attendanceLabel === "string" && typeof value.reminderLabel === "string" && typeof value.contactRouteLabel === "string" && typeof value.canCancel === "boolean";
+  return isRecord26(value) && typeof value.appointmentId === "string" && typeof value.bookingCaseId === "string" && typeof value.title === "string" && typeof value.startAt === "string" && typeof value.durationMinutes === "number" && isAppointmentModality(value.modality) && typeof value.roomLabel === "string" && isStoredAppointmentStatus(value.status) && typeof value.clinicianTypeLabel === "string" && typeof value.attendanceLabel === "string" && typeof value.reminderLabel === "string" && typeof value.contactRouteLabel === "string" && typeof value.canCancel === "boolean";
 }
 function isStoredAppointmentStatus(value) {
   return value === "confirmed" || value === "pending_confirmation";
@@ -58753,10 +58939,10 @@ function action4(label, href, tone, helper) {
     helper
   };
 }
-function isRecord25(value) {
+function isRecord26(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-function isNodeErrorCode3(error, code) {
+function isNodeErrorCode4(error, code) {
   return typeof error === "object" && error !== null && "code" in error && error.code === code;
 }
 
@@ -59850,19 +60036,19 @@ function patientTimeLabel7(recordedAt) {
 }
 
 // services/api-gateway/src/services/patient-profile.service.ts
-import { mkdirSync as mkdirSync3, readFileSync as readFileSync3, renameSync as renameSync3, rmSync as rmSync3, writeFileSync as writeFileSync3 } from "node:fs";
-import { dirname as dirname4 } from "node:path";
+import { mkdirSync as mkdirSync4, readFileSync as readFileSync4, renameSync as renameSync4, rmSync as rmSync4, writeFileSync as writeFileSync4 } from "node:fs";
+import { dirname as dirname5 } from "node:path";
 var PatientProfileService = class {
   persistenceFile;
   profilesByPatientId = /* @__PURE__ */ new Map();
   constructor(options = {}) {
-    this.persistenceFile = normalizedPersistenceFile3(options.persistenceFile);
+    this.persistenceFile = normalizedPersistenceFile4(options.persistenceFile);
     if (this.persistenceFile === void 0) {
       this.replaceWithSnapshot(seedPatientProfileSnapshot());
       return;
     }
-    mkdirSync3(dirname4(this.persistenceFile), { recursive: true });
-    const snapshot = loadSnapshotFromDisk3(this.persistenceFile) ?? seedPatientProfileSnapshot();
+    mkdirSync4(dirname5(this.persistenceFile), { recursive: true });
+    const snapshot = mergePatientProfileSnapshot(loadSnapshotFromDisk3(this.persistenceFile) ?? seedPatientProfileSnapshot());
     this.replaceWithSnapshot(snapshot);
     this.persistIfConfigured();
   }
@@ -59893,24 +60079,24 @@ var PatientProfileService = class {
 `;
     const tempPath = `${this.persistenceFile}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
     try {
-      writeFileSync3(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
-      renameSync3(tempPath, this.persistenceFile);
+      writeFileSync4(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
+      renameSync4(tempPath, this.persistenceFile);
     } catch (error) {
-      rmSync3(tempPath, { force: true });
+      rmSync4(tempPath, { force: true });
       throw error;
     }
   }
 };
-function normalizedPersistenceFile3(value) {
+function normalizedPersistenceFile4(value) {
   const normalized = value?.trim();
   return normalized === void 0 || normalized.length === 0 ? void 0 : normalized;
 }
 function loadSnapshotFromDisk3(filePath) {
   let serialized;
   try {
-    serialized = readFileSync3(filePath, "utf8");
+    serialized = readFileSync4(filePath, "utf8");
   } catch (error) {
-    if (isNodeErrorCode4(error, "ENOENT")) {
+    if (isNodeErrorCode5(error, "ENOENT")) {
       return void 0;
     }
     throw error;
@@ -59924,7 +60110,7 @@ function loadSnapshotFromDisk3(filePath) {
   return parseProfileSnapshot(parsed, filePath);
 }
 function parseProfileSnapshot(value, filePath) {
-  if (!isRecord26(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.profiles)) {
+  if (!isRecord27(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.profiles)) {
     throw new Error(`Patient profile persistence file at ${filePath} does not match the profile snapshot schema.`);
   }
   return {
@@ -59942,6 +60128,46 @@ function seedPatientProfileSnapshot() {
     schemaVersion: "1.0",
     profiles: demoPatientAccounts2.map(profileRecordForDemoAccount)
   };
+}
+function mergePatientProfileSnapshot(snapshot) {
+  const seed = seedPatientProfileSnapshot();
+  const existingByPatientId = new Map(snapshot.profiles.map((profile) => [profile.patientId, profile]));
+  const seededPatientIds = new Set(seed.profiles.map((profile) => profile.patientId));
+  const profiles = seed.profiles.map((seedProfile) => {
+    const existing = existingByPatientId.get(seedProfile.patientId);
+    return existing === void 0 ? seedProfile : mergePatientProfileRecord(seedProfile, existing);
+  });
+  const additionalProfiles = snapshot.profiles.filter((profile) => !seededPatientIds.has(profile.patientId)).map(snapshotProfile);
+  return {
+    schemaVersion: "1.0",
+    profiles: [...profiles, ...additionalProfiles]
+  };
+}
+function mergePatientProfileRecord(seed, existing) {
+  return {
+    patientId: existing.patientId,
+    requestBinding: { ...existing.requestBinding },
+    displayName: existing.displayName.trim().length > 0 ? existing.displayName : seed.displayName,
+    rows: mergeProfileRows(seed.rows, existing.rows),
+    contactRows: mergeProfileRows(seed.contactRows, existing.contactRows)
+  };
+}
+function mergeProfileRows(seedRows, existingRows) {
+  const existingByLabel = new Map(existingRows.map((row) => [canonicalProfileLabel(row.label), row]));
+  const seededLabels = new Set(seedRows.map((row) => canonicalProfileLabel(row.label)));
+  const rowsFromSeed = seedRows.map((seedRow) => {
+    const existing = existingByLabel.get(canonicalProfileLabel(seedRow.label));
+    return existing === void 0 ? { ...seedRow } : {
+      label: seedRow.label,
+      value: existing.value.trim().length > 0 ? existing.value : seedRow.value
+    };
+  });
+  const extraRows = existingRows.filter((row) => !seededLabels.has(canonicalProfileLabel(row.label))).map((row) => ({ ...row }));
+  return [...rowsFromSeed, ...extraRows];
+}
+function canonicalProfileLabel(label) {
+  const normalized = label.trim().toLowerCase();
+  return normalized === "health id" ? "nhs number" : normalized;
 }
 function profileRecordForDemoAccount(account) {
   return {
@@ -59964,6 +60190,18 @@ function profileRecordForDemoAccount(account) {
       {
         label: "Language",
         value: account.pilotProfile.preferredLanguage
+      },
+      {
+        label: "Sex for care",
+        value: account.pilotProfile.sexForCare
+      },
+      {
+        label: "Registered practice",
+        value: `Since ${formatPatientProfileDate(account.pilotProfile.registeredPracticeSince)}`
+      },
+      {
+        label: "Emergency contact",
+        value: `${account.pilotProfile.emergencyContact.name} (${account.pilotProfile.emergencyContact.relationship}), ${account.pilotProfile.emergencyContact.phoneNumber}`
       }
     ],
     contactRows: [
@@ -60018,37 +60256,37 @@ function maskedPatientHealthId(value) {
   return ending ? `Ending ${ending}` : "Recorded";
 }
 function isProfileRecord(value) {
-  return isRecord26(value) && typeof value.patientId === "string" && isRequestBinding2(value.requestBinding) && typeof value.displayName === "string" && Array.isArray(value.rows) && value.rows.every(isProfileRow) && Array.isArray(value.contactRows) && value.contactRows.every(isProfileRow);
+  return isRecord27(value) && typeof value.patientId === "string" && isRequestBinding2(value.requestBinding) && typeof value.displayName === "string" && Array.isArray(value.rows) && value.rows.every(isProfileRow) && Array.isArray(value.contactRows) && value.contactRows.every(isProfileRow);
 }
 function isRequestBinding2(value) {
-  return isRecord26(value) && typeof value.sessionRef === "string" && typeof value.csrfToken === "string";
+  return isRecord27(value) && typeof value.sessionRef === "string" && typeof value.csrfToken === "string";
 }
 function isProfileRow(value) {
-  return isRecord26(value) && typeof value.label === "string" && typeof value.value === "string";
+  return isRecord27(value) && typeof value.label === "string" && typeof value.value === "string";
 }
-function isRecord26(value) {
+function isRecord27(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-function isNodeErrorCode4(error, code) {
+function isNodeErrorCode5(error, code) {
   return typeof error === "object" && error !== null && "code" in error && error.code === code;
 }
 
 // services/api-gateway/src/services/patient-record.service.ts
-import { mkdirSync as mkdirSync4, readFileSync as readFileSync4, renameSync as renameSync4, rmSync as rmSync4, writeFileSync as writeFileSync4 } from "node:fs";
-import { dirname as dirname5 } from "node:path";
+import { mkdirSync as mkdirSync5, readFileSync as readFileSync5, renameSync as renameSync5, rmSync as rmSync5, writeFileSync as writeFileSync5 } from "node:fs";
+import { dirname as dirname6 } from "node:path";
 var defaultNow9 = () => /* @__PURE__ */ new Date();
 var PatientRecordService = class {
   persistenceFile;
   now;
   recordsByPatientId = /* @__PURE__ */ new Map();
   constructor(options = {}) {
-    this.persistenceFile = normalizedPersistenceFile4(options.persistenceFile);
+    this.persistenceFile = normalizedPersistenceFile5(options.persistenceFile);
     this.now = options.now ?? defaultNow9;
     if (this.persistenceFile === void 0) {
       this.replaceWithSnapshot(seedPatientRecordSnapshot());
       return;
     }
-    mkdirSync4(dirname5(this.persistenceFile), { recursive: true });
+    mkdirSync5(dirname6(this.persistenceFile), { recursive: true });
     const snapshot = loadSnapshotFromDisk4(this.persistenceFile) ?? seedPatientRecordSnapshot();
     this.replaceWithSnapshot(snapshot);
     this.persistIfConfigured();
@@ -60086,10 +60324,10 @@ var PatientRecordService = class {
 `;
     const tempPath = `${this.persistenceFile}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
     try {
-      writeFileSync4(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
-      renameSync4(tempPath, this.persistenceFile);
+      writeFileSync5(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
+      renameSync5(tempPath, this.persistenceFile);
     } catch (error) {
-      rmSync4(tempPath, { force: true });
+      rmSync5(tempPath, { force: true });
       throw error;
     }
   }
@@ -60549,16 +60787,16 @@ function snapshotProfile2(profile) {
     artifacts: profile.artifacts.map((artifact) => ({ ...artifact }))
   };
 }
-function normalizedPersistenceFile4(value) {
+function normalizedPersistenceFile5(value) {
   const normalized = value?.trim();
   return normalized === void 0 || normalized.length === 0 ? void 0 : normalized;
 }
 function loadSnapshotFromDisk4(filePath) {
   let serialized;
   try {
-    serialized = readFileSync4(filePath, "utf8");
+    serialized = readFileSync5(filePath, "utf8");
   } catch (error) {
-    if (isNodeErrorCode5(error, "ENOENT")) {
+    if (isNodeErrorCode6(error, "ENOENT")) {
       return void 0;
     }
     throw error;
@@ -60572,7 +60810,7 @@ function loadSnapshotFromDisk4(filePath) {
   return parseRecordSnapshot(parsed, filePath);
 }
 function parseRecordSnapshot(value, filePath) {
-  if (!isRecord27(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.records)) {
+  if (!isRecord28(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.records)) {
     throw new Error(`Patient record persistence file at ${filePath} does not match the record snapshot schema.`);
   }
   return {
@@ -60586,25 +60824,25 @@ function parseRecordSnapshot(value, filePath) {
   };
 }
 function isPatientRecordProfile(value) {
-  return isRecord27(value) && typeof value.patientId === "string" && isRequestBinding3(value.requestBinding) && isPractice(value.practice) && isClinician(value.clinician) && typeof value.recordRef === "string" && typeof value.recordVersionRef === "string" && typeof value.lastUpdatedLabel === "string" && typeof value.safetySummary === "string" && Array.isArray(value.results) && value.results.every(isStoredResult) && Array.isArray(value.medications) && value.medications.every(isStoredMedication) && Array.isArray(value.artifacts) && value.artifacts.every(isStoredArtifact);
+  return isRecord28(value) && typeof value.patientId === "string" && isRequestBinding3(value.requestBinding) && isPractice(value.practice) && isClinician(value.clinician) && typeof value.recordRef === "string" && typeof value.recordVersionRef === "string" && typeof value.lastUpdatedLabel === "string" && typeof value.safetySummary === "string" && Array.isArray(value.results) && value.results.every(isStoredResult) && Array.isArray(value.medications) && value.medications.every(isStoredMedication) && Array.isArray(value.artifacts) && value.artifacts.every(isStoredArtifact);
 }
 function isRequestBinding3(value) {
-  return isRecord27(value) && typeof value.sessionRef === "string" && typeof value.csrfToken === "string";
+  return isRecord28(value) && typeof value.sessionRef === "string" && typeof value.csrfToken === "string";
 }
 function isPractice(value) {
-  return isRecord27(value) && typeof value.practiceRef === "string" && typeof value.practiceLabel === "string" && typeof value.localityLabel === "string";
+  return isRecord28(value) && typeof value.practiceRef === "string" && typeof value.practiceLabel === "string" && typeof value.localityLabel === "string";
 }
 function isClinician(value) {
-  return isRecord27(value) && typeof value.staffRef === "string" && typeof value.displayName === "string" && typeof value.roleTitle === "string";
+  return isRecord28(value) && typeof value.staffRef === "string" && typeof value.displayName === "string" && typeof value.roleTitle === "string";
 }
 function isStoredResult(value) {
-  return isRecord27(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.dateLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && typeof value.comparisonSummary === "string" && isStoredVisibility(value.visibility);
+  return isRecord28(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.dateLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && typeof value.comparisonSummary === "string" && isStoredVisibility(value.visibility);
 }
 function isStoredMedication(value) {
-  return isRecord27(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.lastReviewedLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && typeof value.safetyCaveat === "string";
+  return isRecord28(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.lastReviewedLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && typeof value.safetyCaveat === "string";
 }
 function isStoredArtifact(value) {
-  return isRecord27(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.dateLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && (value.kind === "result_summary" || value.kind === "document") && isPresentationMode(value.presentationMode) && isStoredVisibility(value.visibility);
+  return isRecord28(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.dateLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && (value.kind === "result_summary" || value.kind === "document") && isPresentationMode(value.presentationMode) && isStoredVisibility(value.visibility);
 }
 function isPresentationMode(value) {
   return value === "structured_summary" || value === "governed_preview" || value === "governed_download" || value === "external_handoff" || value === "placeholder_only" || value === "recovery_only";
@@ -60649,10 +60887,10 @@ function action5(label, href, tone, helper) {
     helper
   };
 }
-function isRecord27(value) {
+function isRecord28(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-function isNodeErrorCode5(error, code) {
+function isNodeErrorCode6(error, code) {
   return typeof error === "object" && error !== null && "code" in error && error.code === code;
 }
 
@@ -62791,7 +63029,7 @@ function contactRepairPrimaryAction(scenario2, returnAction) {
     case "awaiting_verification":
       return action7("Check contact detail", `/contact/repair/${scenario2.repairJourneyId}#verify`, "primary", "Confirm the contact detail check.");
     case "rebound_pending":
-      return action7("Finish setup", `/contact/repair/${scenario2.repairJourneyId}#rebound`, "primary", "Finish this check before returning to the request.");
+      return action7("Continue setup", `/contact/repair/${scenario2.repairJourneyId}#rebound`, "primary", "Finish this check before returning to the request.");
     case "completed":
       return returnAction;
     case "recovery_required":
@@ -68974,8 +69212,8 @@ function messagesCard(session) {
   return homeCard({
     order: "30",
     kind: "messages",
-    title: "Messages",
-    stateLabel: session.posture === "signed_in_linked" ? "3 unread" : "Hidden",
+    title: "Inbox",
+    stateLabel: session.posture === "signed_in_linked" ? "3 new" : "Hidden",
     summary: session.posture === "signed_in_linked" ? "Messages, callbacks, and contact updates share one inbox." : "Message details are visible after account confirmation.",
     trustCue: session.posture === "signed_in_linked" ? "One reply and one contact update need attention." : "More details show after confirmation.",
     action: gatedAction(action7("Open messages", "/messages", "supportive", "Review messages and replies."), session, "read"),
@@ -71282,6 +71520,10 @@ var PatientRouteProjectionService = class {
     const demoPatient3 = demoPatientAccountForBinding(requestBinding);
     const threads = this.demoPatientMessageService?.threadsForPatientBinding(requestBinding) ?? [];
     if (demoPatient3 !== void 0 && threads.length === 0) {
+      const threadId = route.params.threadId;
+      if (route.key === "messageThread" && threadId !== void 0 && requestPublicIdFromPatientConversationThreadId(threadId) !== void 0) {
+        return projection;
+      }
       return projectionWithEmptyDemoPatientMessageInbox(projection);
     }
     return projectionWithDemoClinicianMessageThreads(projection, route, threads);
@@ -73578,6 +73820,7 @@ async function createGatewayApp(options = {}) {
   const initialIntakeRepositorySnapshot = sharedIntakeRepository instanceof InMemoryIntakeDraftRepository ? sharedIntakeRepository.exportSnapshot() : void 0;
   const clinicalWorkspaceStaffAuthService = options.clinicalWorkspaceStaffAuthService ?? new ClinicalWorkspaceStaffAuthService({
     allowDemoSessions: !config.production,
+    staffDirectoryPersistenceFile: config.clinicalStaffDirectoryPersistenceFile,
     sessionCatalog: config.clinicalStaffSessionCatalog
   });
   const patientWebSessionAuthService = options.patientWebSessionAuthService ?? new PatientWebSessionAuthService({

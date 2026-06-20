@@ -20547,7 +20547,7 @@ var demoPatientAccounts = [
 var demoClinicianAccounts = [
   {
     clinicianId: "colchester",
-    displayName: "Dr Colchester Taylor",
+    displayName: "Dr Johny",
     staffCredential: "colchester-demo",
     emailAddress: "colchester.clinician@example.test",
     password: "Colchester-Demo-2026!",
@@ -20558,7 +20558,7 @@ var demoClinicianAccounts = [
     staffIdentity: {
       state: "known",
       staffRef: "staff-demo-colchester",
-      displayName: "Dr Colchester Taylor",
+      displayName: "Dr Johny",
       practiceLabel: demoPractice.practiceLabel,
       practiceLocationLabel: demoPractice.localityLabel,
       roleScopeRefs: ["clinical_reviewer", demoPractice.practiceRef],
@@ -22276,7 +22276,7 @@ function patientContinuityDemographics(patient) {
       value: formatAddress(patient.pilotProfile.addressLines, patient.pilotProfile.postcode)
     },
     {
-      label: "Health ID",
+      label: "NHS number",
       value: maskedHealthIdentifier(patient.testNhsNumber)
     },
     {
@@ -22286,6 +22286,14 @@ function patientContinuityDemographics(patient) {
     {
       label: "Sex for care",
       value: patient.pilotProfile.sexForCare
+    },
+    {
+      label: "Registered practice",
+      value: `Since ${formatDemoDate(patient.pilotProfile.registeredPracticeSince)}`
+    },
+    {
+      label: "Emergency contact",
+      value: `${patient.pilotProfile.emergencyContact.name} (${patient.pilotProfile.emergencyContact.relationship}), ${patient.pilotProfile.emergencyContact.phoneNumber}`
     }
   ];
 }
@@ -27266,11 +27274,26 @@ function isPatientConversationThreadRouteParam(value) {
 function isPatientAppointmentRouteParam(value) {
   return isSafePublicRef(value) && value.startsWith("apt_");
 }
+function isPatientBookingCaseRouteParam(value) {
+  return isSafePublicRef(value) && value.startsWith("bkg_");
+}
+function isPatientPharmacyCaseRouteParam(value) {
+  return isSafePublicRef(value) && value.startsWith("pharm_");
+}
+function isPatientWaitlistOfferRouteParam(value) {
+  return isSafePublicRef(value) && value.startsWith("wlo_");
+}
 function isPatientRecordRouteParam(value) {
   return typeof value === "string" && /^[A-Za-z0-9._:-]{1,80}$/u.test(value) && !/(raw|payload|debug|fhir|provider|nhs)/iu.test(value);
 }
 function isPatientAppointmentRouteKey(key) {
   return key === "appointmentDetail" || key === "appointmentManage" || key === "appointmentCancel" || key === "appointmentReschedule";
+}
+function isPatientBookingRouteKey(key) {
+  return key === "bookingWorkspace" || key === "bookingSelect" || key === "bookingConfirm" || key === "bookingWaitlist" || key === "bookingWaitlistManage";
+}
+function isPatientPharmacyRouteKey(key) {
+  return key === "pharmacyChoose" || key === "pharmacyInstructions" || key === "pharmacyStatus";
 }
 function patientAppointmentRoutePathFor(key, appointmentId) {
   switch (key) {
@@ -27284,6 +27307,32 @@ function patientAppointmentRoutePathFor(key, appointmentId) {
       return `/appointments/${encodeURIComponent(appointmentId)}/reschedule`;
     default:
       return `/appointments/${encodeURIComponent(appointmentId)}`;
+  }
+}
+function patientBookingRoutePathFor(key, bookingCaseId) {
+  switch (key) {
+    case "bookingSelect":
+      return `/bookings/${encodeURIComponent(bookingCaseId)}/select`;
+    case "bookingConfirm":
+      return `/bookings/${encodeURIComponent(bookingCaseId)}/confirm`;
+    case "bookingWaitlist":
+      return `/bookings/${encodeURIComponent(bookingCaseId)}/waitlist`;
+    case "bookingWaitlistManage":
+      return `/bookings/${encodeURIComponent(bookingCaseId)}/waitlist/manage`;
+    case "bookingWorkspace":
+    default:
+      return `/bookings/${encodeURIComponent(bookingCaseId)}`;
+  }
+}
+function patientPharmacyRoutePathFor(key, pharmacyCaseId) {
+  switch (key) {
+    case "pharmacyInstructions":
+      return `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/instructions`;
+    case "pharmacyStatus":
+      return `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`;
+    case "pharmacyChoose":
+    default:
+      return `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`;
   }
 }
 function isPatientRoutePathBoundToParams(key, path, params) {
@@ -27302,6 +27351,18 @@ function isPatientRoutePathBoundToParams(key, path, params) {
   if (isPatientAppointmentRouteKey(key)) {
     const appointmentId = params.appointmentId;
     return isPatientAppointmentRouteParam(appointmentId) && path === patientAppointmentRoutePathFor(key, appointmentId);
+  }
+  if (isPatientBookingRouteKey(key)) {
+    const bookingCaseId = params.bookingCaseId;
+    return isPatientBookingCaseRouteParam(bookingCaseId) && path === patientBookingRoutePathFor(key, bookingCaseId);
+  }
+  if (isPatientPharmacyRouteKey(key)) {
+    const pharmacyCaseId = params.pharmacyCaseId;
+    return isPatientPharmacyCaseRouteParam(pharmacyCaseId) && path === patientPharmacyRoutePathFor(key, pharmacyCaseId);
+  }
+  if (key === "waitlistOffer") {
+    const waitlistOfferId = params.waitlistOfferId;
+    return isPatientWaitlistOfferRouteParam(waitlistOfferId) && path === `/waitlist/offers/${encodeURIComponent(waitlistOfferId)}`;
   }
   if (key === "recordDetail") {
     const recordItemId = params.recordItemId;
@@ -29166,7 +29227,7 @@ var demoPatientAccounts2 = [
 var demoClinicianAccounts2 = [
   {
     clinicianId: "colchester",
-    displayName: "Dr Colchester Taylor",
+    displayName: "Dr Johny",
     staffCredential: "colchester-demo",
     emailAddress: "colchester.clinician@example.test",
     password: "Colchester-Demo-2026!",
@@ -29177,7 +29238,7 @@ var demoClinicianAccounts2 = [
     staffIdentity: {
       state: "known",
       staffRef: "staff-demo-colchester",
-      displayName: "Dr Colchester Taylor",
+      displayName: "Dr Johny",
       practiceLabel: demoPractice2.practiceLabel,
       practiceLocationLabel: demoPractice2.localityLabel,
       roleScopeRefs: ["clinical_reviewer", demoPractice2.practiceRef],

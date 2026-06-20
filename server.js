@@ -20421,7 +20421,7 @@ var demoPatientPilotProfiles = {
     preferredLanguage: "English",
     registeredPracticeSince: "2024-04-18",
     emergencyContact: demoEmergencyContact("Amina Khan", "Sister", "+447700900205"),
-    scenarioLabel: "Closed-loop request"
+    scenarioLabel: "Returned reply review"
   })
 };
 var demoPatientTestNhsNumbers = {
@@ -20825,7 +20825,7 @@ var seedQueueRows = [
     leaseAvailability: {
       state: "available",
       label: "Available",
-      detail: "Ready for assignment."
+      detail: "Ready to claim."
     },
     claimPosture: {
       state: "claim_available",
@@ -20876,17 +20876,17 @@ var seedQueueRows = [
     leaseAvailability: {
       state: "recovery_required",
       label: "Recheck needed",
-      detail: "Recheck before assignment."
+      detail: "Recheck before claiming."
     },
     claimPosture: {
       state: "recovery_required",
       label: "Recheck access",
-      disabledReason: "Access recheck is required before assignment."
+      disabledReason: "Access needs a recheck before claiming."
     },
     lockState: "expired",
     changedSinceSeen: false,
     changedSinceSeenLabel: "No new changes",
-    blockingReasonLabel: "Assignment access needs recheck",
+    blockingReasonLabel: "Access needs recheck",
     nextActionLabel: "Review"
   },
   {
@@ -21334,7 +21334,7 @@ function capturePromptsFor(template) {
       state: toneForEvidence(template.evidenceReadinessState)
     },
     {
-      label: "Request update",
+      label: "Request creation",
       detail: template.supportAssistedSummary,
       state: template.promotionReadiness === "ready_to_promote" ? "ready" : "watch"
     }
@@ -21854,7 +21854,7 @@ function searchWorkspaceFor(route, routeWritability, selectedAnchorRef) {
       { label: "Messages", href: hrefForWorkspaceRoute("workspaceSearch", { q: "message" }), tone: "ready" },
       { label: "Callbacks", href: hrefForWorkspaceRoute("workspaceSearch", { q: "callback" }), tone: "watch" },
       { label: "Booking options", href: hrefForWorkspaceRoute("workspaceSearch", { q: "booking" }), tone: "watch" },
-      { label: "Service review", href: hrefForWorkspaceRoute("workspaceSearch", { q: "hub" }), tone: "watch" },
+      { label: "Care coordination", href: hrefForWorkspaceRoute("workspaceSearch", { q: "hub" }), tone: "watch" },
       { label: "Pharmacy", href: hrefForWorkspaceRoute("workspaceSearch", { q: "pharmacy" }), tone: "watch" }
     ],
     results,
@@ -21901,7 +21901,7 @@ function searchWorkspaceResults() {
       resultRef: "search-result-intake-inspector",
       taskId: "intake-trk_projection",
       title: "Maqbool - Symptoms request",
-      summary: "Ready for staff review.",
+      summary: "Ready for review.",
       typeLabel: "Intake",
       priorityLabel: "Review",
       updatedLabel: "Just now",
@@ -22068,8 +22068,8 @@ function searchWorkspaceResults() {
     {
       resultRef: "search-result-hub-handoff",
       taskId: "task-hub",
-      title: "Service review",
-      summary: "Service support is ready for review.",
+      title: "Care coordination request",
+      summary: "Care coordination support is ready for review.",
       typeLabel: "Care coordination",
       priorityLabel: "Review",
       updatedLabel: "Ready",
@@ -22168,7 +22168,7 @@ function patientContinuitySummaryFor(patient, index) {
     activityLabel: patientContinuityActivityLabel(patient.patientId),
     nextActionLabel,
     openWorkLabel: patient.patientId === "amjad" ? "1 open request" : "2 open items",
-    messageStatusLabel: patient.patientId === "zaeem" ? "Message ready" : patient.patientId === "maqbool" ? "Reply expected" : "No unread messages",
+    messageStatusLabel: patient.patientId === "zaeem" ? "Message ready" : patient.patientId === "maqbool" ? "Reply returned" : "No unread messages",
     routeHref: hrefForWorkspaceRoute("workspacePatientProfile", { patientId: patient.patientId }),
     tags: patientContinuityTags(patient.patientId),
     tone
@@ -22673,7 +22673,7 @@ var bookingQueueScenarioRows = [
     elapsedLabel: "11m",
     queueExplanation: "Booking search",
     rankExplanation: "Searching stays visible until options are ready.",
-    fairnessSignal: "Search work stays visible.",
+    fairnessSignal: "Appointment search stays visible.",
     surfaceState: "searching"
   },
   {
@@ -28878,7 +28878,7 @@ var demoPatientPilotProfiles2 = {
     preferredLanguage: "English",
     registeredPracticeSince: "2024-04-18",
     emergencyContact: demoEmergencyContact2("Amina Khan", "Sister", "+447700900205"),
-    scenarioLabel: "Closed-loop request"
+    scenarioLabel: "Returned reply review"
   })
 };
 var demoPatientTestNhsNumbers2 = {
@@ -40087,8 +40087,8 @@ async function materializeLiveIntakeRequest(input) {
       trackingRef: input.requestPublicId,
       result: liveSubmitResult,
       authoritativeState: "settled",
-      receiptHref: `/v1/intake/requests/${input.requestPublicId}/receipt`,
-      statusHref: `/v1/intake/requests/${input.requestPublicId}/status`,
+      receiptHref: intakeRequestReceiptHref(input.requestPublicId),
+      statusHref: intakeRequestStatusHref(input.requestPublicId),
       patientSafeMessage: liveSubmitResult === "urgent_diversion" ? "The urgent live intake has been sent for staff review." : "The live intake has been sent for staff review.",
       recordedAt: input.recordedAt
     },
@@ -40154,8 +40154,8 @@ async function materializeManualIntakeRequest(input) {
       trackingRef: input.requestPublicId,
       result: manualSubmitResult,
       authoritativeState: "settled",
-      receiptHref: `/v1/intake/requests/${input.requestPublicId}/receipt`,
-      statusHref: `/v1/intake/requests/${input.requestPublicId}/status`,
+      receiptHref: intakeRequestReceiptHref(input.requestPublicId),
+      statusHref: intakeRequestStatusHref(input.requestPublicId),
       patientSafeMessage: manualSubmitResult === "urgent_diversion" ? "The intake has been marked urgent and created for staff review." : "The intake has been created for staff review.",
       recordedAt: input.recordedAt
     },
@@ -40253,8 +40253,8 @@ async function materializePartialIntakeReviewRequest(input) {
       trackingRef: input.requestPublicId,
       result: partialSubmitResult,
       authoritativeState: "settled",
-      receiptHref: `/v1/intake/requests/${input.requestPublicId}/receipt`,
-      statusHref: `/v1/intake/requests/${input.requestPublicId}/status`,
+      receiptHref: intakeRequestReceiptHref(input.requestPublicId),
+      statusHref: intakeRequestStatusHref(input.requestPublicId),
       patientSafeMessage: partialSubmitResult === "urgent_diversion" ? "The urgent intake has been sent for staff review." : "The intake has been sent for staff review.",
       recordedAt: input.recordedAt
     },
@@ -40659,6 +40659,12 @@ function manualIntakeStableSuffix2(value) {
 }
 function sha256(value) {
   return `sha256:${createHash6("sha256").update(value).digest("hex")}`;
+}
+function intakeRequestReceiptHref(requestPublicId) {
+  return `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/receipt`;
+}
+function intakeRequestStatusHref(requestPublicId) {
+  return `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/status`;
 }
 function clinicalCommandClockIso(now) {
   let current;
@@ -51343,8 +51349,9 @@ function publicSubmitSettlementLinksMatchRequest(response) {
   if (requestPublicId === void 0) {
     return true;
   }
-  const expectedReceiptHref = `/v1/intake/requests/${requestPublicId}/receipt`;
-  const expectedStatusHref = `/v1/intake/requests/${requestPublicId}/status`;
+  const encodedRequestPublicId = encodeURIComponent(requestPublicId);
+  const expectedReceiptHref = `/v1/intake/requests/${encodedRequestPublicId}/receipt`;
+  const expectedStatusHref = `/v1/intake/requests/${encodedRequestPublicId}/status`;
   return (response.settlement.receiptHref === void 0 || response.settlement.receiptHref === expectedReceiptHref) && (response.settlement.statusHref === void 0 || response.settlement.statusHref === expectedStatusHref);
 }
 function promotionRecordPrecedence(record2) {
@@ -52792,7 +52799,8 @@ function submitResponseLinksMatchRequest(response) {
   if (requestPublicId === void 0) {
     return true;
   }
-  return (response.settlement.receiptHref === void 0 || response.settlement.receiptHref === `/v1/intake/requests/${requestPublicId}/receipt`) && (response.settlement.statusHref === void 0 || response.settlement.statusHref === `/v1/intake/requests/${requestPublicId}/status`);
+  const encodedRequestPublicId = encodeURIComponent(requestPublicId);
+  return (response.settlement.receiptHref === void 0 || response.settlement.receiptHref === `/v1/intake/requests/${encodedRequestPublicId}/receipt`) && (response.settlement.statusHref === void 0 || response.settlement.statusHref === `/v1/intake/requests/${encodedRequestPublicId}/status`);
 }
 function requestReferenceIssues(entries, target, targetIdField, requestIdField, path) {
   return entries.flatMap(([requestPublicId, recordId]) => {
@@ -63993,10 +64001,10 @@ function networkOfferCopy(route) {
   const mutationOpen = networkOfferMutationOpen(networkOffer);
   const settledCopy = networkOfferSettledCopy(networkOffer);
   return {
-    pageTitle: mutationOpen ? "Choose a network appointment" : settledCopy?.pageTitle ?? "Network offer needs a safe check",
+    pageTitle: mutationOpen ? "Choose a network appointment" : settledCopy?.pageTitle ?? "Times need a check",
     eyebrow: "Network appointment offer",
-    summary: mutationOpen ? "Your practice could not offer the ideal slot, so these network appointment options are available for you to choose from." : settledCopy?.summary ?? "The previous offer is still shown for context, but new actions are paused until the service rechecks it.",
-    primaryAction: mutationOpen ? action4("Choose an option", `${route.path}#network-offer-options`, "primary", "Select an option before accepting it.") : settledCopy ? action4("Review offer status", `${route.path}#network-offer-heading`, "supportive", settledCopy.actionHelper) : actionWithGate("Review safely", "/recovery", "supportive", "Open a safe check before taking another action.", "read_only"),
+    summary: mutationOpen ? "Your practice could not offer the ideal slot, so these network appointment options are available for you to choose from." : settledCopy?.summary ?? "The previous offer is still shown, but the practice needs to check it before anything changes.",
+    primaryAction: mutationOpen ? action4("Choose an option", `${route.path}#network-offer-options`, "primary", "Select an option before accepting it.") : settledCopy ? action4("Review offer status", `${route.path}#network-offer-heading`, "supportive", settledCopy.actionHelper) : actionWithGate("Get help with this offer", "/recovery", "supportive", "Get help before taking another action.", "read_only"),
     session,
     identityState: "signedIn",
     networkOffer,
@@ -64012,21 +64020,21 @@ function networkOfferSettledCopy(networkOffer) {
   switch (networkOffer.offerSession.patientChoiceState) {
     case "selected":
       return {
-        pageTitle: "Network option is being checked",
-        summary: "Your selected option is being checked before the appointment is confirmed.",
-        actionHelper: "Review the selected network option and confirmation status."
+        pageTitle: "Time is being checked",
+        summary: "Your chosen time is being checked before the appointment is confirmed.",
+        actionHelper: "Review your chosen time and confirmation status."
       };
     case "declined":
       return {
-        pageTitle: "Network options declined",
-        summary: "These network appointment options have been declined and are no longer editable here.",
-        actionHelper: "Review the declined network offer status."
+        pageTitle: "Times no longer open",
+        summary: "These appointment times are closed and cannot be changed here.",
+        actionHelper: "Review this offer status."
       };
     case "callback_requested":
       return {
-        pageTitle: "Callback request is being linked",
-        summary: "Your callback request is being linked, and the appointment options are paused.",
-        actionHelper: "Review the callback request status."
+        pageTitle: "Call request is being arranged",
+        summary: "Your call request is being arranged, and these appointment times are paused.",
+        actionHelper: "Review the call request status."
       };
     case "prepared":
     case "delivered":
@@ -64194,21 +64202,21 @@ function networkOfferActionabilityLabel(scenario2) {
     case "wrong_subject":
       return "This offer cannot be used by this signed-in account.";
     case "embedded_drift":
-      return "This embedded route is paused until the service rechecks it.";
+      return "This page is paused while the practice checks the offer.";
     case "stale_truth":
-      return "This offer needs another check before new actions.";
+      return "The practice needs to check this offer before anything changes.";
     case "regenerated":
       return "A newer offer set replaced these choices.";
     case "expired":
-      return "This offer has expired and is shown only as previous context.";
+      return "This offer has expired and is shown only for reference.";
     case "accepted":
-      return "Your selected option is being checked.";
+      return "Your chosen time is being checked.";
     case "declined":
       return "You declined these options.";
     case "callback":
-      return "Callback request is being linked.";
+      return "Call request is being arranged.";
     case "live":
-      return "Choose one option before accepting.";
+      return "Choose one time before accepting.";
   }
 }
 function networkOfferRecoveryReasons(scenario2) {
@@ -64218,7 +64226,7 @@ function networkOfferRecoveryReasons(scenario2) {
     case "embedded_drift":
       return ["Embedded route needs recheck"];
     case "stale_truth":
-      return ["Offer needs another check"];
+      return ["Offer needs checking"];
     case "regenerated":
       return ["A newer offer is available"];
     case "expired":
@@ -65085,11 +65093,11 @@ function pharmacyStatusRecoveryProjection(pharmacyCaseId, scenario2, truthState)
     case "reachability_blocked":
       return statusRecovery("contact_repair", "We need current contact details", "The pharmacy referral is paused until contact details are checked.", ["Contact details need checking"], action4("Update contact details", pharmacyContactRepairHref, "primary", "Send current contact details before pharmacy updates continue."));
     case "stale_choice":
-      return statusRecovery("stale_choice", "Pharmacy choice needs a refresh", "The previous pharmacy choice is still shown, but new actions are paused.", ["Pharmacy choice needs refreshing"], action4("Refresh pharmacy choices", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`, "supportive", "Reload pharmacy choices."));
+      return statusRecovery("stale_choice", "Pharmacy choice needs a refresh", "The previous pharmacy choice is still shown while the practice checks the latest pharmacy details.", ["Pharmacy choice needs refreshing"], action4("Refresh pharmacy choices", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`, "supportive", "Reload pharmacy choices."));
     case "continuity_stale":
       return statusRecovery("continuity_blocked", "Pharmacy status needs a check", "The latest status cannot be shown as settled until the page is refreshed.", ["Status check is needed"], action4("Refresh pharmacy status", statusHref, "supportive", "Reload the latest available status."));
     case "recovery":
-      return statusRecovery("recovery_only", "Pharmacy request needs a check", "New pharmacy actions are paused until the latest status can be confirmed.", ["Status could not be confirmed"], action4("Refresh pharmacy status", statusHref, "supportive", "Reload the latest pharmacy status."));
+      return statusRecovery("recovery_only", "Pharmacy request needs a check", "The latest pharmacy details need checking before anything changes.", ["Status could not be confirmed"], action4("Refresh pharmacy status", statusHref, "supportive", "Reload the latest pharmacy status."));
     case "choice":
     case "selected":
     case "dispatch_pending":
@@ -65142,7 +65150,7 @@ function pharmacyRecoveryProjection(pharmacyCaseId, scenario2, selectedProvider)
       return recoveryProjection({
         recoveryState: "choice_stale",
         title: "Pharmacy choice needs a refresh",
-        message: "The previous choice is still shown, but new actions are paused because pharmacy availability changed.",
+        message: "The previous choice is still shown while the practice checks current pharmacy availability.",
         reasons: ["The pharmacy list changed after the choice was made"],
         readOnlyProvenanceLabel: "Previous choice shown",
         ...common
@@ -67471,8 +67479,8 @@ function patientStatusResponseForRoute(route) {
 function patientReceiptResponseForRoute(route) {
   const rawRequestPublicId = route.params.requestPublicId ?? route.params.trackingRef ?? "";
   const requestPublicId = safeStatusTrackingRef(rawRequestPublicId) === "trk_statuspreview" ? "trk_requestsubmitted" : safeStatusTrackingRef(rawRequestPublicId);
-  const receiptHref = `/request/${requestPublicId}/receipt`;
-  const statusHref = `/status/${requestPublicId}`;
+  const receiptHref = patientReceiptShellHref(requestPublicId);
+  const statusHref = patientStatusShellHref(requestPublicId);
   const receiptFixture = receiptFixtureForRequestPublicId(requestPublicId);
   const outcomeKind = receiptFixture.outcomeKind;
   const receipt = patientReceiptViewFromEnvelope({

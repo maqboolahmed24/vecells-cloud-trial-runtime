@@ -27248,9 +27248,17 @@ var safePatientRoutePublicParamKeys = /* @__PURE__ */ new Set([
   "selectedChildAnchorRef",
   "sourceSectionRef"
 ]);
+var patientRouteRequestRefParamKeys = /* @__PURE__ */ new Set([
+  "returnRequestRef",
+  "requestRef",
+  "requestId"
+]);
 function isSafePatientRouteParamEntry(key, entry) {
   if (typeof entry !== "string" || entry.length > 180) {
     return false;
+  }
+  if (patientRouteRequestRefParamKeys.has(key)) {
+    return isPatientRequestPublicRouteParam(entry);
   }
   if (safePatientRoutePublicParamKeys.has(key)) {
     return isSafePublicRef(entry);
@@ -27265,6 +27273,19 @@ function isRouteParamRecord(value) {
 }
 function isPatientRequestPublicRouteParam(value) {
   return isSafePublicRef(value) && value.startsWith("trk_");
+}
+function isPatientResumeRouteParam(value) {
+  return typeof value === "string" && value.length > 0 && value.length <= 200 && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,199}$/u.test(value);
+}
+function isPatientAccountRecoveryRouteParam(value) {
+  return typeof value === "string" && value.length > 0 && value.length <= 120 && /^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/u.test(value);
+}
+function patientAccountRecoveryRouteParam(params) {
+  const values = [params.identityHold, params.hold, params.reason].filter((value) => value !== void 0);
+  if (values.length > 1 && !values.every((value) => value === values[0])) {
+    return void 0;
+  }
+  return values[0];
 }
 function isPatientRequestDetailRoutePath(requestId, path) {
   const encodedRequestId = encodeURIComponent(requestId);
@@ -27355,6 +27376,17 @@ function patientPharmacyRoutePathFor(key, pharmacyCaseId) {
   }
 }
 function isPatientRoutePathBoundToParams(key, path, params) {
+  if (key === "accountRecovery") {
+    const identityHold = patientAccountRecoveryRouteParam(params);
+    if (identityHold === void 0) {
+      return path === "/account/recovery";
+    }
+    return isPatientAccountRecoveryRouteParam(identityHold) && path === `/account/recovery/${encodeURIComponent(identityHold)}`;
+  }
+  if (key === "resume") {
+    const resumeToken = params.resumeToken;
+    return isPatientResumeRouteParam(resumeToken) && path === `/resume/${encodeURIComponent(resumeToken)}`;
+  }
   if (key === "requestDetail") {
     const requestId = patientRequestDetailRouteParam(params);
     return isPatientRequestPublicRouteParam(requestId) && isPatientRequestDetailRoutePath(requestId, path);
@@ -52235,6 +52267,12 @@ var InMemoryIntakeDraftRepository = class {
     resetMap(this.continuityEvidenceById, snapshot.records.continuityEvidenceById, cloneDraftContinuityEvidenceProjection);
   }
   async getByDraftPublicId(draftPublicId) {
+    return this.getByDraftPublicIdInMemory(draftPublicId);
+  }
+  async listDraftRecords() {
+    return [...this.envelopesByDraftPublicId.keys()].map((draftPublicId) => this.getByDraftPublicIdInMemory(draftPublicId)).filter((record2) => record2 !== void 0);
+  }
+  getByDraftPublicIdInMemory(draftPublicId) {
     const envelope = this.envelopesByDraftPublicId.get(draftPublicId);
     const resumeToken = this.resumeTokensByDraftPublicId.get(draftPublicId);
     if (envelope === void 0 || resumeToken === void 0) {
@@ -52252,12 +52290,6 @@ var InMemoryIntakeDraftRepository = class {
       resumeToken,
       ...activeLease === void 0 ? {} : { activeLease }
     });
-  }
-  async listDraftRecords() {
-    const records = await Promise.all(
-      [...this.envelopesByDraftPublicId.keys()].map((draftPublicId) => this.getByDraftPublicId(draftPublicId))
-    );
-    return records.filter((record2) => record2 !== void 0);
   }
   async getBySubmissionEnvelopeRef(submissionEnvelopeRef) {
     const state = this.persistedStatesBySubmissionEnvelopeRef.get(submissionEnvelopeRef);
@@ -60394,10 +60426,12 @@ function mergeProfileRows(seedRows, existingRows) {
   const existingByLabel = new Map(existingRows.map((row) => [canonicalProfileLabel(row.label), row]));
   const seededLabels = new Set(seedRows.map((row) => canonicalProfileLabel(row.label)));
   const rowsFromSeed = seedRows.map((seedRow) => {
-    const existing = existingByLabel.get(canonicalProfileLabel(seedRow.label));
+    const canonicalLabel = canonicalProfileLabel(seedRow.label);
+    const existing = existingByLabel.get(canonicalLabel);
+    const existingValue = existing?.value.trim() ?? "";
     return existing === void 0 ? { ...seedRow } : {
       label: seedRow.label,
-      value: existing.value.trim().length > 0 ? existing.value : seedRow.value
+      value: existingValue.length > 0 && !profileRowNeedsSeedRefresh(canonicalLabel, existingValue) ? existing.value : seedRow.value
     };
   });
   const extraRows = existingRows.filter((row) => !seededLabels.has(canonicalProfileLabel(row.label))).map((row) => ({ ...row }));
@@ -60406,6 +60440,9 @@ function mergeProfileRows(seedRows, existingRows) {
 function canonicalProfileLabel(label) {
   const normalized = label.trim().toLowerCase();
   return normalized === "health id" ? "nhs number" : normalized;
+}
+function profileRowNeedsSeedRefresh(canonicalLabel, existingValue) {
+  return canonicalLabel === "registered practice" && !/\bmedical practice\b/iu.test(existingValue);
 }
 function profileRecordForDemoAccount(account) {
   return {
@@ -71550,6 +71587,7 @@ var PatientRouteProjectionService = class {
   patientProfileService;
   patientRecordService;
   secureLinkRedemptionService;
+  intakeRepository;
   featureFlags;
   allowFixtureFallback;
   now;
@@ -71566,6 +71604,7 @@ var PatientRouteProjectionService = class {
     this.patientProfileService = options.patientProfileService ?? new PatientProfileService();
     this.patientRecordService = options.patientRecordService ?? new PatientRecordService(clockOptions);
     this.secureLinkRedemptionService = options.secureLinkRedemptionService ?? new SecureLinkRedemptionService(clockOptions);
+    this.intakeRepository = options.intakeRepository;
     this.featureFlags = options.featureFlags ?? defaultPatientProjectionFeatureFlags;
     this.allowFixtureFallback = options.allowFixtureFallback ?? false;
     this.now = options.now ?? (() => /* @__PURE__ */ new Date());
@@ -71703,7 +71742,7 @@ var PatientRouteProjectionService = class {
       );
       return liveRequestStatus === void 0 ? projection : projectionWithLiveRequestConversationStatus(projection, liveRequestStatus);
     }
-    return projectionWithCleanStartDemoPatient(
+    const standardProjection = projectionWithCleanStartDemoPatient(
       this.projectionWithDemoPatientMessages(
         this.projectionWithPatientAppointments(
           this.projectionWithPatientRecords(
@@ -71722,6 +71761,7 @@ var PatientRouteProjectionService = class {
       ),
       requestBinding
     );
+    return this.projectionWithLiveRequestInboxThreads(standardProjection, route, projectionContext, requestBinding);
   }
   secureLinkProjectionOrThrow(error) {
     const statusCode = statusCodeFor2(error);
@@ -71755,16 +71795,76 @@ var PatientRouteProjectionService = class {
     if (route.key !== "messages" && route.key !== "messageThread") {
       return projection;
     }
+    const threadId = route.params.threadId;
+    if (route.key === "messageThread" && threadId !== void 0 && requestPublicIdFromPatientConversationThreadId(threadId) !== void 0) {
+      return projection;
+    }
     const demoPatient3 = demoPatientAccountForBinding(requestBinding);
     const threads = this.demoPatientMessageService?.threadsForPatientBinding(requestBinding) ?? [];
     if (demoPatient3 !== void 0 && threads.length === 0) {
-      const threadId = route.params.threadId;
-      if (route.key === "messageThread" && threadId !== void 0 && requestPublicIdFromPatientConversationThreadId(threadId) !== void 0) {
-        return projection;
-      }
       return projectionWithEmptyDemoPatientMessageInbox(projection);
     }
     return projectionWithDemoClinicianMessageThreads(projection, route, threads);
+  }
+  async projectionWithLiveRequestInboxThreads(projection, route, context, requestBinding) {
+    if (route.key !== "messages") {
+      return projection;
+    }
+    const statuses = await this.liveRequestConversationStatusesForPatient(requestBinding);
+    if (statuses.length === 0) {
+      return projection;
+    }
+    const liveProjections = statuses.map((status) => this.liveRequestConversationProjection(status, context)).filter((liveProjection) => liveProjection !== void 0);
+    return projectionWithLiveRequestConversationInboxThreads(projection, liveProjections);
+  }
+  async liveRequestConversationStatusesForPatient(requestBinding) {
+    const demoPatient3 = demoPatientAccountForBinding(requestBinding);
+    if (this.intakeRepository === void 0 || demoPatient3 === void 0) {
+      return [];
+    }
+    const promotionRecords = await this.intakeRepository.listSubmissionPromotionRecords();
+    const statusCandidates = await Promise.all(promotionRecords.map(async (record2) => {
+      const [draftRecord, receiptEnvelope] = await Promise.all([
+        this.intakeRepository?.getByDraftPublicId(record2.draftPublicId),
+        this.intakeRepository?.getPatientReceiptEnvelopeByRequestPublicId(record2.requestPublicId)
+      ]);
+      if (draftRecord?.envelope.identityContext.subjectRef !== demoPatient3.subjectRef || !patientReceiptNeedsLiveConversation(receiptEnvelope)) {
+        return void 0;
+      }
+      try {
+        return (await this.patientStatusService.getStatus(record2.requestPublicId, void 0, requestBinding)).response.status;
+      } catch {
+        return void 0;
+      }
+    }));
+    return statusCandidates.filter((status) => status !== void 0 && (status.state === "awaiting_patient_reply" || status.state === "patient_reply_received")).sort((left, right) => right.requestPublicId.localeCompare(left.requestPublicId));
+  }
+  liveRequestConversationProjection(status, context) {
+    const threadId = patientConversationThreadIdForRequest(status.requestPublicId);
+    const route = {
+      key: "messageThread",
+      path: `/messages/${threadId}`,
+      params: { threadId }
+    };
+    const projection = projectionWithLiveRequestConversationStatus(
+      adaptPatientRouteProjection(route, this.featureFlags, context),
+      status
+    );
+    const inbox = projection.patientConversationInbox;
+    const thread = inbox?.threadProjections.find((candidate) => candidate.threadId === threadId);
+    const cluster = inbox?.clusters.find((candidate) => candidate.threadId === threadId);
+    const previewDigest = inbox?.previewDigests.find((candidate) => candidate.threadId === threadId);
+    if (inbox === void 0 || thread === void 0 || cluster === void 0 || previewDigest === void 0) {
+      return void 0;
+    }
+    return {
+      thread,
+      cluster,
+      previewDigest,
+      groups: inbox.groups.filter((group) => group.clusterRefs.includes(cluster.clusterId)),
+      receiptEnvelopes: inbox.receiptEnvelopes.filter((receipt) => receipt.threadId === threadId),
+      urgentDiversionStates: inbox.urgentDiversionStates.filter((state) => state.threadId === threadId)
+    };
   }
   projectionWithPatientAccountProfile(projection, requestBinding) {
     if (projection.accountStatus === void 0) {
@@ -71827,6 +71927,72 @@ var PatientRouteProjectionService = class {
     };
   }
 };
+function patientReceiptNeedsLiveConversation(receiptEnvelope) {
+  return receiptEnvelope?.recoveryReasonRef === "receipt-recovery:awaiting-more-info" || receiptEnvelope?.recoveryReasonRef === "receipt-recovery:patient-reply-received";
+}
+function projectionWithLiveRequestConversationInboxThreads(projection, liveProjections) {
+  const inbox = projection.patientConversationInbox;
+  if (inbox === void 0 || liveProjections.length === 0) {
+    return projection;
+  }
+  const liveThreadIds = new Set(liveProjections.map((liveProjection) => liveProjection.thread.threadId));
+  const selected = liveProjections[0];
+  if (selected === void 0) {
+    return projection;
+  }
+  const groups = [
+    ...liveProjections.flatMap((liveProjection) => liveProjection.groups),
+    ...inbox.groups.filter((group) => !group.clusterRefs.some((clusterRef) => liveProjections.some((liveProjection) => liveProjection.cluster.clusterId === clusterRef)))
+  ];
+  const clusters = [
+    ...liveProjections.map((liveProjection) => liveProjection.cluster),
+    ...inbox.clusters.filter((cluster) => !liveThreadIds.has(cluster.threadId))
+  ];
+  const previewDigests = [
+    ...liveProjections.map((liveProjection) => liveProjection.previewDigest),
+    ...inbox.previewDigests.filter((digest) => !liveThreadIds.has(digest.threadId))
+  ];
+  const threadProjections = [
+    ...liveProjections.map((liveProjection) => liveProjection.thread),
+    ...inbox.threadProjections.filter((thread) => !liveThreadIds.has(thread.threadId))
+  ];
+  const receiptEnvelopes = [
+    ...liveProjections.flatMap((liveProjection) => liveProjection.receiptEnvelopes),
+    ...inbox.receiptEnvelopes.filter((receipt) => !liveThreadIds.has(receipt.threadId))
+  ];
+  const urgentDiversionStates = [
+    ...liveProjections.flatMap((liveProjection) => liveProjection.urgentDiversionStates),
+    ...inbox.urgentDiversionStates.filter((state) => !liveThreadIds.has(state.threadId))
+  ];
+  const unreadTotal = previewDigests.reduce((total, digest) => total + digest.unreadCount, 0);
+  const replyNeededCount = previewDigests.filter((digest) => digest.replyNeededState === "reply_needed").length;
+  const awaitingReviewCount = previewDigests.filter((digest) => digest.awaitingReviewState === "awaiting_review").length;
+  const repairRequiredCount = previewDigests.filter((digest) => digest.repairRequiredState !== "none").length;
+  return {
+    ...projection,
+    primaryAction: selected.thread.dominantNextAction,
+    patientConversationInbox: {
+      ...inbox,
+      inboxProjectionId: `patient-conversation-inbox:${safeDemoConversationRef(selected.thread.threadId)}:live`,
+      selectedAnchorRef: selected.thread.selectedAnchorRef,
+      selectedClusterRef: selected.cluster.clusterId,
+      selectedThreadId: selected.thread.threadId,
+      groups,
+      clusters,
+      previewDigests,
+      threadProjections,
+      selectedThread: selected.thread,
+      receiptEnvelopes,
+      urgentDiversionStates,
+      unreadTotal,
+      replyNeededCount,
+      awaitingReviewCount,
+      repairRequiredCount,
+      dominantNextAction: selected.thread.dominantNextAction,
+      liveAnnouncement: `${unreadTotal} ${unreadTotal === 1 ? "unread update" : "unread updates"}, ${replyNeededCount} ${replyNeededCount === 1 ? "reply needed" : "replies needed"}, ${repairRequiredCount} contact items need help.`
+    }
+  };
+}
 function isAppointmentManageRouteKey(routeKey) {
   return routeKey === "appointmentDetail" || routeKey === "appointmentManage" || routeKey === "appointmentCancel" || routeKey === "appointmentReschedule";
 }
@@ -74159,6 +74325,7 @@ async function createGatewayApp(options = {}) {
     patientProfileService,
     patientRecordService,
     secureLinkRedemptionService,
+    intakeRepository: sharedIntakeRepository,
     allowFixtureFallback: !config.production,
     now
   });

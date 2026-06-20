@@ -5,7 +5,11 @@ var __getOwnPropNames = Object.getOwnPropertyNames;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __commonJS = (cb, mod) => function __require() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
@@ -11443,6 +11447,11 @@ var gatewayConfigSchema = {
       key: "API_GATEWAY_PATIENT_APPOINTMENT_PERSISTENCE_FILE",
       parser: configString({ maxLength: 1024 }),
       defaultValue: ""
+    },
+    patientRecordPersistenceFile: {
+      key: "API_GATEWAY_PATIENT_RECORD_PERSISTENCE_FILE",
+      parser: configString({ maxLength: 1024 }),
+      defaultValue: ""
     }
   }
 };
@@ -18644,11 +18653,11 @@ function receiptRequestIdentityMatches(value) {
 function isDirectIntakeRequestHref(href, requestPublicId, resource) {
   return typeof requestPublicId === "string" && isLocalHref2(href) && href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/${resource}`;
 }
-function isReceiptActionBoundToRequest(action8, requestPublicId) {
-  if (!action8.href.startsWith("/v1/intake/requests/")) {
+function isReceiptActionBoundToRequest(action9, requestPublicId) {
+  if (!action9.href.startsWith("/v1/intake/requests/")) {
     return true;
   }
-  return action8.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/receipt` || action8.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/status`;
+  return action9.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/receipt` || action9.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/status`;
 }
 function isPatientCopy(value) {
   return typeof value === "string" && value.trim().length > 0 && value.length <= 280 && !publicCopyForbiddenPattern.test(value);
@@ -18786,7 +18795,7 @@ function isPatientReceiptView(value) {
     "artifactPresentationContractRef",
     "statusStrip",
     "issuedAt"
-  ]) && isSafeIdentifier11(value.requestPublicId) && String(value.requestPublicId).startsWith("trk_") && isSafeIdentifier11(value.trackingRef) && String(value.trackingRef).startsWith("trk_") && receiptRequestIdentityMatches(value) && isPatientReceiptState(value.receiptState) && isPatientReceiptOutcomeKind(value.outcomeKind) && isPatientReceiptSafetyViewState(value.safetyState) && (value.requestSafetyState === void 0 || value.requestSafetyState === "screen_clear" || value.requestSafetyState === "residual_risk_flagged" || value.requestSafetyState === "urgent_diversion_required" || value.requestSafetyState === "urgent_diverted" || value.requestSafetyState === "fallback_manual_review") && (value.workflowState === void 0 || value.workflowState === "submitted" || value.workflowState === "intake_normalized" || value.workflowState === "triage_ready" || value.workflowState === "triage_active" || value.workflowState === "handoff_active" || value.workflowState === "outcome_recorded" || value.workflowState === "closed") && isPatientCopy(value.heading) && isPatientCopy(value.summary) && (value.patientSafeSummary === void 0 || isPatientIntakeSafeSummaryView(value.patientSafeSummary)) && isPatientCopy(value.safetyLabel) && isPatientCopy(value.etaLabel) && isPatientCopy(value.nextStepLabel) && isPatientReceiptFreshnessView(value.freshness) && isDirectIntakeRequestHref(value.receiptHref, value.requestPublicId, "receipt") && isDirectIntakeRequestHref(value.statusHref, value.requestPublicId, "status") && Array.isArray(value.actions) && value.actions.length > 0 && value.actions.every((action8) => isPatientReceiptActionView(action8) && typeof value.requestPublicId === "string" && isReceiptActionBoundToRequest(action8, value.requestPublicId)) && isPatientReceiptArtifactView(value.artifact) && (value.artifactPresentationContractRef === void 0 || isSafeIdentifier11(value.artifactPresentationContractRef)) && isPatientReceiptStatusStripView(value.statusStrip) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt);
+  ]) && isSafeIdentifier11(value.requestPublicId) && String(value.requestPublicId).startsWith("trk_") && isSafeIdentifier11(value.trackingRef) && String(value.trackingRef).startsWith("trk_") && receiptRequestIdentityMatches(value) && isPatientReceiptState(value.receiptState) && isPatientReceiptOutcomeKind(value.outcomeKind) && isPatientReceiptSafetyViewState(value.safetyState) && (value.requestSafetyState === void 0 || value.requestSafetyState === "screen_clear" || value.requestSafetyState === "residual_risk_flagged" || value.requestSafetyState === "urgent_diversion_required" || value.requestSafetyState === "urgent_diverted" || value.requestSafetyState === "fallback_manual_review") && (value.workflowState === void 0 || value.workflowState === "submitted" || value.workflowState === "intake_normalized" || value.workflowState === "triage_ready" || value.workflowState === "triage_active" || value.workflowState === "handoff_active" || value.workflowState === "outcome_recorded" || value.workflowState === "closed") && isPatientCopy(value.heading) && isPatientCopy(value.summary) && (value.patientSafeSummary === void 0 || isPatientIntakeSafeSummaryView(value.patientSafeSummary)) && isPatientCopy(value.safetyLabel) && isPatientCopy(value.etaLabel) && isPatientCopy(value.nextStepLabel) && isPatientReceiptFreshnessView(value.freshness) && isDirectIntakeRequestHref(value.receiptHref, value.requestPublicId, "receipt") && isDirectIntakeRequestHref(value.statusHref, value.requestPublicId, "status") && Array.isArray(value.actions) && value.actions.length > 0 && value.actions.every((action9) => isPatientReceiptActionView(action9) && typeof value.requestPublicId === "string" && isReceiptActionBoundToRequest(action9, value.requestPublicId)) && isPatientReceiptArtifactView(value.artifact) && (value.artifactPresentationContractRef === void 0 || isSafeIdentifier11(value.artifactPresentationContractRef)) && isPatientReceiptStatusStripView(value.statusStrip) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt);
 }
 function isPatientReceiptResponse(value) {
   return isRecord15(value) && hasOnlyRecordKeys13(value, ["schemaVersion", "receipt"]) && value.schemaVersion === "1.0" && isPatientReceiptView(value.receipt);
@@ -18832,11 +18841,11 @@ function statusRequestIdentityMatches(value) {
 function isDirectIntakeRequestHref2(href, requestPublicId, resource) {
   return typeof requestPublicId === "string" && isLocalHref3(href) && href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/${resource}`;
 }
-function isStatusActionBoundToRequest(action8, requestPublicId) {
-  if (!action8.href.startsWith("/v1/intake/requests/")) {
+function isStatusActionBoundToRequest(action9, requestPublicId) {
+  if (!action9.href.startsWith("/v1/intake/requests/")) {
     return true;
   }
-  return action8.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/receipt` || action8.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/status`;
+  return action9.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/receipt` || action9.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/status`;
 }
 function isPatientCopy2(value) {
   return typeof value === "string" && value.trim().length > 0 && value.length <= 280 && !publicCopyForbiddenPattern2.test(value);
@@ -19836,7 +19845,9 @@ function safePatientPortalEntryRoute(route) {
     return {
       key: "secureLink",
       path: "/secure-link/checking",
-      params: {}
+      params: {
+        secureLinkToken: "checking"
+      }
     };
   }
   return route;
@@ -23586,10 +23597,10 @@ function duplicateReviewActionsFor(input) {
       helper: "Keep duplicate uncertainty visible and leave follow-on actions held."
     }
   ];
-  return actions.map((action8) => ({
-    ...action8,
+  return actions.map((action9) => ({
+    ...action9,
     consumesDuplicateClusterRef: input.duplicateClusterRef,
-    consumesPairEvidenceRef: action8.commandName === "resolve-duplicate-defer" ? null : input.selectedPairEvidenceRef,
+    consumesPairEvidenceRef: action9.commandName === "resolve-duplicate-defer" ? null : input.selectedPairEvidenceRef,
     consumesResolutionDecisionRef: input.currentResolutionDecisionRef,
     decisionEpochRef: input.decisionEpochRef,
     ...disabledReason ? { disabledReason } : {}
@@ -23609,7 +23620,7 @@ function duplicateDominantActionFor(actions, scenario2) {
     };
   }
   const commandName = scenario2.relationType === "retry" ? "resolve-duplicate-mark-retry" : scenario2.relationType === "same_episode_candidate" ? "resolve-duplicate-attach-episode" : scenario2.relationType === "separate" ? "resolve-duplicate-keep-separate" : scenario2.relationType === "review_required" ? "resolve-duplicate-manual-review" : "resolve-duplicate-defer";
-  return actions.find((action8) => action8.commandName === commandName) ?? actions[0] ?? {
+  return actions.find((action9) => action9.commandName === commandName) ?? actions[0] ?? {
     commandName: "resolve-duplicate-defer",
     label: "Defer",
     helper: "Keep duplicate uncertainty visible.",
@@ -25541,55 +25552,55 @@ function clinicalMessageApprovalStateFor(posture) {
   }
 }
 function clinicalMessageSeedPrimaryActionFor(seedState) {
-  const action8 = {
+  const action9 = {
     commandName: "seed-clinician-message",
     label: "Prepare patient message"
   };
   switch (seedState) {
     case "ready_to_seed":
       return {
-        ...action8,
+        ...action9,
         helper: "Create the checked clinician message plan."
       };
     case "draft_intent":
       return {
-        ...action8,
+        ...action9,
         helper: "Outcome review is available before the patient message is prepared.",
         disabledReason: "Confirm the clinical message outcome before preparing the patient message."
       };
     case "approval_required":
       return {
-        ...action8,
+        ...action9,
         helper: "Approval must be satisfied before the patient message can become actionable.",
         disabledReason: "Approval is still required for this message plan."
       };
     case "settlement_pending":
       return {
-        ...action8,
+        ...action9,
         helper: "Patient message is waiting.",
         disabledReason: "Wait before preparing the patient message."
       };
     case "seeded":
       return {
-        ...action8,
+        ...action9,
         helper: "The current decision already has a checked patient message recorded.",
         disabledReason: "Patient message is already recorded for this confirmed decision."
       };
     case "recovery_required":
       return {
-        ...action8,
+        ...action9,
         helper: "Recheck the decision view before preparing the patient message.",
         disabledReason: "Decision view recheck is required first."
       };
     case "blocked":
       return {
-        ...action8,
+        ...action9,
         helper: "Current approval or safety review blocks patient message preparation.",
         disabledReason: "Patient message preparation is blocked for this state."
       };
     case "not_applicable":
       return {
-        ...action8,
+        ...action9,
         helper: "Select the clinical message outcome to prepare a patient message.",
         disabledReason: "Clinical message outcome is not selected."
       };
@@ -26499,7 +26510,7 @@ function moreInfoWorkspaceFor(input) {
   const workspaceState = input.reviewRequired || input.mutationFrozen ? "route_recovery" : input.digest.statusState;
   const routeFrozen = workspaceState === "route_recovery";
   const active = input.route.childRoute === "more-info";
-  const action8 = moreInfoDominantActionFor(workspaceState, routeFrozen);
+  const action9 = moreInfoDominantActionFor(workspaceState, routeFrozen);
   return {
     workspaceId: `more-info-workspace:${publicTaskFragment(input.digest.taskId)}`,
     active,
@@ -26509,7 +26520,7 @@ function moreInfoWorkspaceFor(input) {
     statusDigest: input.digest,
     selectedAnchorRef: input.selectedAnchorRef,
     routePostureLabel: routeFrozen ? "Access needs recheck before sending" : "Draft is current in this review",
-    dominantAction: action8,
+    dominantAction: action9,
     panels: moreInfoWorkspacePanels(workspaceState),
     selectedPanelKey: workspaceState === "response_received" ? "monitor" : "compose",
     composer: moreInfoComposerFor(workspaceState, input.selectedAnchorRef),
@@ -26525,7 +26536,7 @@ function taskActionAvailabilityFor(route, moreInfoWorkspace, endpointDecisionWor
   if (safetyInterrupt.active) {
     return uniqueCommands([
       safetyInterrupt.primaryAction.commandName,
-      ...safetyInterrupt.secondaryActions.map((action8) => action8.commandName)
+      ...safetyInterrupt.secondaryActions.map((action9) => action9.commandName)
     ]);
   }
   if (duplicateReview.active) {
@@ -26540,7 +26551,7 @@ function taskActionAvailabilityFor(route, moreInfoWorkspace, endpointDecisionWor
     }
     return uniqueCommands([
       duplicateReview.dominantAction.commandName,
-      ...duplicateReview.actions.map((action8) => action8.commandName),
+      ...duplicateReview.actions.map((action9) => action9.commandName),
       "request-more-info",
       "escalate",
       "release"
@@ -27242,7 +27253,7 @@ function isPatientRequestPublicRouteParam(value) {
   return isSafePublicRef(value) && value.startsWith("trk_");
 }
 function isPatientSecureLinkRouteParam(value) {
-  return value === "checking" || isSecureLinkToken(value);
+  return typeof value === "string" && value.length > 0 && value.length <= 255 && /^[A-Za-z0-9][A-Za-z0-9._~-]{0,254}$/u.test(value);
 }
 function isPatientRoutePathBoundToParams(key, path, params) {
   if (key === "requestReceipt") {
@@ -27518,7 +27529,7 @@ function isPatientProjectionReceiptView(value) {
     "artifactPresentationContractRef",
     "statusStrip",
     "issuedAt"
-  ]) && isPatientProjectionRequestPublicId(requestPublicId) && value.trackingRef === requestPublicId && (value.receiptState === "issued" || value.receiptState === "read_only" || value.receiptState === "recovery_required" || value.receiptState === "superseded") && (value.outcomeKind === "routine_triage" || value.outcomeKind === "residual_review" || value.outcomeKind === "urgent_diversion" || value.outcomeKind === "fallback_review") && (value.safetyState === "online_checks_complete" || value.safetyState === "extra_review" || value.safetyState === "urgent_handling" || value.safetyState === "review_needed" || value.safetyState === "recovery") && (value.requestSafetyState === void 0 || value.requestSafetyState === "screen_clear" || value.requestSafetyState === "residual_risk_flagged" || value.requestSafetyState === "urgent_diversion_required" || value.requestSafetyState === "urgent_diverted" || value.requestSafetyState === "fallback_manual_review") && (value.workflowState === void 0 || value.workflowState === "submitted" || value.workflowState === "intake_normalized" || value.workflowState === "triage_ready" || value.workflowState === "triage_active" || value.workflowState === "handoff_active" || value.workflowState === "outcome_recorded" || value.workflowState === "closed") && typeof value.heading === "string" && value.heading.length > 0 && value.heading.length <= 160 && typeof value.summary === "string" && value.summary.length > 0 && value.summary.length <= 280 && (value.patientSafeSummary === void 0 || isPatientProjectionSafeSummary(value.patientSafeSummary)) && typeof value.safetyLabel === "string" && value.safetyLabel.length > 0 && value.safetyLabel.length <= 160 && typeof value.etaLabel === "string" && value.etaLabel.length > 0 && value.etaLabel.length <= 180 && typeof value.nextStepLabel === "string" && value.nextStepLabel.length > 0 && value.nextStepLabel.length <= 180 && isPatientProjectionFreshnessView(value.freshness, ["current", "stale", "recovery_required", "superseded"]) && isPatientShellReceiptHref(value.receiptHref, requestPublicId) && isPatientShellStatusHref(value.statusHref, requestPublicId) && Array.isArray(value.actions) && value.actions.length > 0 && value.actions.every((action8) => isPatientProjectionReceiptAction(action8, requestPublicId)) && isPatientProjectionReceiptArtifact(value.artifact) && (value.artifactPresentationContractRef === void 0 || isSafePublicRef(value.artifactPresentationContractRef)) && isPatientProjectionReceiptStatusStrip(value.statusStrip) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt);
+  ]) && isPatientProjectionRequestPublicId(requestPublicId) && value.trackingRef === requestPublicId && (value.receiptState === "issued" || value.receiptState === "read_only" || value.receiptState === "recovery_required" || value.receiptState === "superseded") && (value.outcomeKind === "routine_triage" || value.outcomeKind === "residual_review" || value.outcomeKind === "urgent_diversion" || value.outcomeKind === "fallback_review") && (value.safetyState === "online_checks_complete" || value.safetyState === "extra_review" || value.safetyState === "urgent_handling" || value.safetyState === "review_needed" || value.safetyState === "recovery") && (value.requestSafetyState === void 0 || value.requestSafetyState === "screen_clear" || value.requestSafetyState === "residual_risk_flagged" || value.requestSafetyState === "urgent_diversion_required" || value.requestSafetyState === "urgent_diverted" || value.requestSafetyState === "fallback_manual_review") && (value.workflowState === void 0 || value.workflowState === "submitted" || value.workflowState === "intake_normalized" || value.workflowState === "triage_ready" || value.workflowState === "triage_active" || value.workflowState === "handoff_active" || value.workflowState === "outcome_recorded" || value.workflowState === "closed") && typeof value.heading === "string" && value.heading.length > 0 && value.heading.length <= 160 && typeof value.summary === "string" && value.summary.length > 0 && value.summary.length <= 280 && (value.patientSafeSummary === void 0 || isPatientProjectionSafeSummary(value.patientSafeSummary)) && typeof value.safetyLabel === "string" && value.safetyLabel.length > 0 && value.safetyLabel.length <= 160 && typeof value.etaLabel === "string" && value.etaLabel.length > 0 && value.etaLabel.length <= 180 && typeof value.nextStepLabel === "string" && value.nextStepLabel.length > 0 && value.nextStepLabel.length <= 180 && isPatientProjectionFreshnessView(value.freshness, ["current", "stale", "recovery_required", "superseded"]) && isPatientShellReceiptHref(value.receiptHref, requestPublicId) && isPatientShellStatusHref(value.statusHref, requestPublicId) && Array.isArray(value.actions) && value.actions.length > 0 && value.actions.every((action9) => isPatientProjectionReceiptAction(action9, requestPublicId)) && isPatientProjectionReceiptArtifact(value.artifact) && (value.artifactPresentationContractRef === void 0 || isSafePublicRef(value.artifactPresentationContractRef)) && isPatientProjectionReceiptStatusStrip(value.statusStrip) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt);
 }
 function isPatientProjectionTimelineStep(value) {
   return isRecordValue(value) && hasOnlyRecordKeys15(value, ["label", "state", "detail"]) && typeof value.label === "string" && value.label.length > 0 && value.label.length <= 120 && typeof value.detail === "string" && value.detail.length > 0 && value.detail.length <= 180 && (value.state === "complete" || value.state === "current" || value.state === "attention" || value.state === "next");
@@ -28153,9 +28164,9 @@ async function registerClinicalWorkspaceRoutes(app, dependencies) {
     }
   );
 }
-function runProductPatientMessageAction(action8) {
+function runProductPatientMessageAction(action9) {
   try {
-    return action8();
+    return action9();
   } catch (error) {
     throw productPatientMessageErrorFor(error);
   }
@@ -39565,6 +39576,10 @@ var ClinicalWorkspaceCommandService = class {
     this.intakeRepository = intakeRepository;
     this.liveIntakeRepository = liveIntakeRepository;
   }
+  repository;
+  now;
+  intakeRepository;
+  liveIntakeRepository;
   async dispatchCommand(request, staffIdentity2) {
     if (!isPublishedWorkspaceRouteMatch(request.route)) {
       throw new GatewayHttpError(
@@ -41257,15 +41272,15 @@ function validateDuplicateResolutionCommandContext(request, projection, subjectR
   }
   const selectedCandidate = duplicate.candidates.find((candidate) => candidate.candidateRequestRef === context.candidateRequestRef && candidate.pairEvidenceRef === context.pairEvidenceRef);
   const selectedPairEvidence = duplicate.pairEvidence.find((evidence) => evidence.candidateRequestRef === context.candidateRequestRef && evidence.pairEvidenceRef === context.pairEvidenceRef);
-  const action8 = duplicate.actions.find((candidate) => candidate.commandName === request.commandName);
-  if (!selectedCandidate || !selectedPairEvidence || !action8 || action8.disabledReason !== void 0) {
+  const action9 = duplicate.actions.find((candidate) => candidate.commandName === request.commandName);
+  if (!selectedCandidate || !selectedPairEvidence || !action9 || action9.disabledReason !== void 0) {
     throw new GatewayHttpError(
       409,
       "clinical_command_context_mismatch",
       "Clinical workspace duplicate context is not available for this projection."
     );
   }
-  if (action8.consumesDuplicateClusterRef !== context.duplicateClusterRef || action8.consumesPairEvidenceRef !== null && action8.consumesPairEvidenceRef !== context.pairEvidenceRef) {
+  if (action9.consumesDuplicateClusterRef !== context.duplicateClusterRef || action9.consumesPairEvidenceRef !== null && action9.consumesPairEvidenceRef !== context.pairEvidenceRef) {
     throw new GatewayHttpError(
       409,
       "clinical_command_context_mismatch",
@@ -41461,7 +41476,7 @@ function isCommandAvailableForProjection(projection, commandName, subjectRef) {
   if (projection.telephonyCapture?.callPublicId === subjectRef && projection.telephonyCapture.actionAvailability.includes(commandName)) {
     return true;
   }
-  if (projection.assistedBooking?.bookingCaseId === subjectRef && projection.assistedBooking.actionPostures.some((action8) => action8.commandName === commandName && action8.availability === "available")) {
+  if (projection.assistedBooking?.bookingCaseId === subjectRef && projection.assistedBooking.actionPostures.some((action9) => action9.commandName === commandName && action9.availability === "available")) {
     return true;
   }
   const searchResult = projection.searchWorkspace?.results.find((result) => result.taskId === subjectRef);
@@ -41651,6 +41666,10 @@ var ClinicalWorkspaceProjectionService = class {
     this.intakeRepository = intakeRepository;
     this.liveIntakeRepository = liveIntakeRepository;
   }
+  now;
+  commandRepository;
+  intakeRepository;
+  liveIntakeRepository;
   async loadProjection(request, staffIdentity2) {
     if (!isClinicalWorkspaceProjectionRequest(request) || !isPublishedWorkspaceRouteMatch(request.route)) {
       throw new GatewayHttpError(
@@ -42406,18 +42425,18 @@ function liveTelephonyActionAvailabilityForSession(session, actionAvailability) 
 }
 function liveTelephonyActionPosturesForSession(session, actionPostures) {
   if (session.lastCommandName === "mark-urgent-live") {
-    return actionPostures.map((action8) => action8.commandName === "mark-urgent-live" ? {
-      ...action8,
+    return actionPostures.map((action9) => action9.commandName === "mark-urgent-live" ? {
+      ...action9,
       enabled: false,
       reason: "Urgent handling sent."
-    } : action8);
+    } : action9);
   }
   if (session.lastCommandName === "issue-continuation") {
-    return actionPostures.map((action8) => action8.commandName === "issue-continuation" ? {
-      ...action8,
+    return actionPostures.map((action9) => action9.commandName === "issue-continuation" ? {
+      ...action9,
       enabled: false,
       reason: "Text link sent. Waiting."
-    } : action8);
+    } : action9);
   }
   return actionPostures;
 }
@@ -43879,11 +43898,11 @@ function applyTelephonyCaptureCommandState(projection, settlement) {
     supportAssistedSummary: copy.supportAssistedSummary,
     statusItems: pendingTelephonyStatusItems(projection.statusItems, copy.statusLabel),
     actionAvailability: projection.actionAvailability.filter((commandName) => commandName !== settlement.commandName),
-    actionPostures: projection.actionPostures.map((action8) => action8.commandName === settlement.commandName ? {
-      ...action8,
+    actionPostures: projection.actionPostures.map((action9) => action9.commandName === settlement.commandName ? {
+      ...action9,
       enabled: false,
       reason: "Sent. Waiting."
-    } : action8),
+    } : action9),
     generatedAt: "Updated just now"
   };
 }
@@ -43998,10 +44017,10 @@ function applyAssistedBookingCommandState(projection, settlement) {
       })),
       generatedAt: "Updated just now"
     },
-    actionPostures: projection.actionPostures.map((action8) => ({
-      ...action8,
+    actionPostures: projection.actionPostures.map((action9) => ({
+      ...action9,
       availability: "frozen",
-      reason: action8.commandName === settlement.commandName ? "Sent. Waiting." : "Waiting."
+      reason: action9.commandName === settlement.commandName ? "Sent. Waiting." : "Waiting."
     })),
     settlement: {
       ...projection.settlement,
@@ -60007,6 +60026,629 @@ function isNodeErrorCode4(error, code) {
   return typeof error === "object" && error !== null && "code" in error && error.code === code;
 }
 
+// services/api-gateway/src/services/patient-record.service.ts
+import { mkdirSync as mkdirSync4, readFileSync as readFileSync4, renameSync as renameSync4, rmSync as rmSync4, writeFileSync as writeFileSync4 } from "node:fs";
+import { dirname as dirname5 } from "node:path";
+var defaultNow9 = () => /* @__PURE__ */ new Date();
+var PatientRecordService = class {
+  persistenceFile;
+  now;
+  recordsByPatientId = /* @__PURE__ */ new Map();
+  constructor(options = {}) {
+    this.persistenceFile = normalizedPersistenceFile4(options.persistenceFile);
+    this.now = options.now ?? defaultNow9;
+    if (this.persistenceFile === void 0) {
+      this.replaceWithSnapshot(seedPatientRecordSnapshot());
+      return;
+    }
+    mkdirSync4(dirname5(this.persistenceFile), { recursive: true });
+    const snapshot = loadSnapshotFromDisk4(this.persistenceFile) ?? seedPatientRecordSnapshot();
+    this.replaceWithSnapshot(snapshot);
+    this.persistIfConfigured();
+  }
+  recordOverviewForPatientBinding(base, binding) {
+    const record2 = this.recordForPatientBinding(binding);
+    if (record2 === void 0) {
+      return void 0;
+    }
+    return recordOverviewProjectionForProfile(base, record2, this.now().toISOString());
+  }
+  recordForPatientBinding(binding) {
+    if (binding === void 0) {
+      return void 0;
+    }
+    return [...this.recordsByPatientId.values()].find((candidate) => candidate.requestBinding.sessionRef === binding.sessionRef && candidate.requestBinding.csrfToken === binding.csrfToken);
+  }
+  replaceWithSnapshot(snapshot) {
+    this.recordsByPatientId.clear();
+    for (const record2 of snapshot.records) {
+      this.recordsByPatientId.set(record2.patientId, snapshotProfile2(record2));
+    }
+  }
+  exportSnapshot() {
+    return {
+      schemaVersion: "1.0",
+      records: [...this.recordsByPatientId.values()].sort((left, right) => left.patientId.localeCompare(right.patientId)).map(snapshotProfile2)
+    };
+  }
+  persistIfConfigured() {
+    if (this.persistenceFile === void 0) {
+      return;
+    }
+    const payload = `${JSON.stringify(this.exportSnapshot())}
+`;
+    const tempPath = `${this.persistenceFile}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
+    try {
+      writeFileSync4(tempPath, payload, { encoding: "utf8", mode: 384, flag: "wx" });
+      renameSync4(tempPath, this.persistenceFile);
+    } catch (error) {
+      rmSync4(tempPath, { force: true });
+      throw error;
+    }
+  }
+};
+function recordOverviewProjectionForProfile(base, profile, renderedAt) {
+  const results = profile.results.map((result) => resultProjection(profile, result));
+  const medications = profile.medications.map((medication) => medicationProjection(medication));
+  const artifacts = profile.artifacts.map((artifact) => artifactProjection(profile, artifact));
+  const documentArtifacts = artifacts.filter((artifact) => artifact.recordItemId.startsWith("document-"));
+  const followUpActions = followUpActionsForProfile(base, profile);
+  const sections = sectionsForProfile(base.sections, {
+    profile,
+    results,
+    medications,
+    documentArtifacts,
+    followUpActions
+  });
+  const selectedRecordItemId = base.selectedRecordItemId && hasRecordItem(base.selectedRecordItemId, results, medications, artifacts) ? base.selectedRecordItemId : base.selectedRecordItemId;
+  return {
+    ...base,
+    recordOverviewProjectionId: `patient-record-overview:${profile.patientId}:${base.selectedRecordItemId ?? "overview"}`,
+    recordRef: profile.recordRef,
+    recordVersionRef: profile.recordVersionRef,
+    recordVisibilityEnvelopeRef: `record-visibility-envelope:${profile.patientId}:${base.selectedRecordItemId ?? "overview"}`,
+    recordReleaseGateRef: `record-release-gate:${profile.patientId}:${base.selectedRecordItemId ?? "overview"}`,
+    recordStepUpCheckpointRef: `record-step-up-checkpoint:${profile.patientId}:${base.selectedRecordItemId ?? "overview"}`,
+    recordOriginContinuationRef: `record-origin-continuation:patient-record:${base.selectedRecordItemId ?? "overview"}`,
+    recoveryContinuationTokenRef: `recovery-continuation:patient-record:${base.selectedRecordItemId ?? "overview"}`,
+    routeIntentBindingRef: `patient-route-intent:${base.selectedRecordItemId === null ? "records" : "recordDetail"}:${profile.patientId}`,
+    selectedRecordItemId,
+    sourceLabel: profile.practice.practiceLabel,
+    lastUpdatedLabel: profile.lastUpdatedLabel,
+    pageTitle: base.selectedRecordItemId === null ? "Records" : "Record detail",
+    summary: `Recent records shared by ${profile.practice.practiceLabel}.`,
+    safetySummary: profile.safetySummary,
+    sections,
+    results,
+    medications,
+    documentLibrary: {
+      ...base.documentLibrary,
+      documentLibraryProjectionId: `patient-document-library:${profile.patientId}`,
+      recordRef: profile.recordRef,
+      sectionRef: `patient-record-section:${profile.patientId}:documents`,
+      title: "Documents",
+      summary: `Letters and notes shared by ${profile.practice.practiceLabel}.`,
+      documents: documentArtifacts
+    },
+    artifacts,
+    followUpActions,
+    delayedReleasePlaceholders: [],
+    dominantAction: followUpActions.find((action9) => action9.followUpIntent === "request_follow_up")?.action ?? results[0]?.primaryAction ?? base.dominantAction,
+    renderedAt
+  };
+}
+function resultProjection(profile, result) {
+  const artifactRef2 = `patient-record-artifact:${result.recordItemId}`;
+  return {
+    resultInsightProjectionId: `patient-record-result:${result.recordItemId}`,
+    recordItemId: result.recordItemId,
+    patientSafeTitle: result.title,
+    plainLanguageSummary: result.summary,
+    dateLabel: result.dateLabel,
+    sourceLabel: result.sourceLabel,
+    statusLabel: result.statusLabel,
+    comparisonSummary: result.comparisonSummary,
+    visibilityState: "visible",
+    releaseState: "visible",
+    summarySafetyTier: "patient_safe",
+    evidenceState: result.visibility === "source_only" ? "source_only" : "artifact_verified",
+    artifactParityState: result.visibility === "source_only" ? "source_only" : "verified",
+    relatedArtifactProjectionRef: profile.artifacts.some((artifact) => artifact.recordItemId === result.recordItemId) ? artifactRef2 : null,
+    primaryAction: action5(
+      "Ask about this",
+      recordOriginActionHref("message_clinician", result.recordItemId, "results"),
+      "primary",
+      "Ask a question about this result."
+    )
+  };
+}
+function medicationProjection(medication) {
+  return {
+    medicationProjectionId: `patient-record-medication:${medication.recordItemId}`,
+    recordItemId: medication.recordItemId,
+    patientSafeTitle: medication.title,
+    summary: medication.summary,
+    lastReviewedLabel: medication.lastReviewedLabel,
+    sourceLabel: medication.sourceLabel,
+    statusLabel: medication.statusLabel,
+    safetyCaveat: medication.safetyCaveat,
+    visibilityState: "visible",
+    releaseState: "visible",
+    summarySafetyTier: "patient_safe",
+    evidenceState: "source_only",
+    artifactParityState: "source_only"
+  };
+}
+function artifactProjection(profile, artifact) {
+  const sourceOnly = artifact.visibility === "source_only";
+  return {
+    recordArtifactProjectionId: `patient-record-artifact:${artifact.recordItemId}`,
+    recordItemId: artifact.recordItemId,
+    recordRef: profile.recordRef,
+    recordVersionRef: profile.recordVersionRef,
+    patientSafeTitle: artifact.title,
+    patientSafeSummary: artifact.summary,
+    dateLabel: artifact.dateLabel,
+    sourceLabel: artifact.sourceLabel,
+    statusLabel: artifact.statusLabel,
+    structuredSummaryRef: `structured-summary:${artifact.recordItemId}`,
+    sourceArtifactRef: `source-artifact:${artifact.recordItemId}`,
+    artifactPresentationContractRef: `artifact-presentation-contract:${artifact.recordItemId}`,
+    artifactSurfaceFrameRef: `artifact-surface-frame:${artifact.recordItemId}`,
+    artifactSurfaceBindingRef: `artifact-surface-binding:${artifact.recordItemId}`,
+    artifactSurfaceContextRef: `artifact-surface-context:${artifact.recordItemId}`,
+    artifactModeTruthProjectionRef: `artifact-mode-truth:${artifact.recordItemId}`,
+    artifactParityDigestRef: `artifact-parity-digest:${artifact.recordItemId}`,
+    recordArtifactParityWitnessRef: `record-artifact-parity-witness:${artifact.recordItemId}`,
+    artifactTransferSettlementRef: `artifact-transfer-settlement:${artifact.recordItemId}`,
+    artifactFallbackDispositionRef: `artifact-fallback-disposition:${artifact.recordItemId}`,
+    recordOriginContinuationRef: `record-origin-continuation:patient-record:${artifact.recordItemId}`,
+    recoveryContinuationTokenRef: `recovery-continuation:patient-record:${artifact.recordItemId}`,
+    presentationMode: artifact.presentationMode,
+    visibilityState: "visible",
+    releaseState: "visible",
+    summarySafetyTier: "patient_safe",
+    summaryParityState: sourceOnly ? "source_only" : "verified",
+    sourceAuthorityState: sourceOnly ? "source_only" : "summary_verified",
+    evidenceState: sourceOnly ? "source_only" : "artifact_verified",
+    parityTupleHash: `patient-record-parity:${profile.patientId}:${artifact.recordItemId}`,
+    primaryAction: action5(
+      artifact.kind === "document" ? "View document" : "View result summary",
+      `/records/${encodeURIComponent(artifact.recordItemId)}`,
+      artifact.kind === "document" && !sourceOnly ? "primary" : "supportive",
+      artifact.kind === "document" ? "Open the record note summary." : "Open the governed result summary."
+    )
+  };
+}
+function followUpActionsForProfile(base, profile) {
+  const selectedRecordItemId = base.selectedRecordItemId;
+  const selectedSectionKey = selectedRecordItemId?.startsWith("document-") ? "documents" : selectedRecordItemId?.startsWith("medicine-") ? "medicines" : selectedRecordItemId?.startsWith("follow-up-") ? "follow_up" : "results";
+  const resultId = selectedRecordItemId?.startsWith("result-") ? selectedRecordItemId : profile.results[0]?.recordItemId;
+  const documentId = selectedRecordItemId?.startsWith("document-") ? selectedRecordItemId : profile.artifacts.find((artifact) => artifact.kind === "document")?.recordItemId;
+  const medicationId = selectedRecordItemId?.startsWith("medicine-") ? selectedRecordItemId : profile.medications[0]?.recordItemId;
+  const templates = base.followUpActions;
+  const actions = [];
+  if (resultId) {
+    actions.push(followUpActionFromTemplate(
+      templateForIntent(templates, "message_clinician"),
+      resultId,
+      "results",
+      "message_clinician",
+      "Ask about this",
+      `Ask ${profile.practice.practiceLabel} a question about this result.`,
+      "Ask about this",
+      "Ask a question about this result."
+    ));
+  }
+  if (documentId) {
+    actions.push(followUpActionFromTemplate(
+      templateForIntent(templates, "request_follow_up"),
+      documentId,
+      "documents",
+      "request_follow_up",
+      "Start follow-up request",
+      `Start a request using the note shared by ${profile.practice.practiceLabel}.`,
+      "Start request",
+      "Start a request from this record note."
+    ));
+  }
+  if (medicationId) {
+    actions.push(followUpActionFromTemplate(
+      templateForIntent(templates, "booking"),
+      medicationId,
+      "medicines",
+      "booking",
+      "Book medicines review",
+      `Book a medicines review using the summary shared by ${profile.practice.practiceLabel}.`,
+      "Book review",
+      "Continue to booking with this medicines summary."
+    ));
+  }
+  actions.push(followUpActionFromTemplate(
+    templateForIntent(templates, "contact_repair"),
+    "record-access-contact-route",
+    "follow_up",
+    "contact_repair",
+    "Check contact details",
+    "If the practice cannot reach you, check contact details before continuing.",
+    "Check contact details",
+    "Check contact details before continuing."
+  ));
+  if (selectedRecordItemId) {
+    actions.push(followUpActionFromTemplate(
+      templateForIntent(templates, "read_only_recovery"),
+      selectedRecordItemId,
+      selectedSectionKey,
+      "read_only_recovery",
+      "Refresh record details",
+      "Keep this record summary visible while we check the latest details.",
+      "Refresh record",
+      "Refresh this record before taking the next step."
+    ));
+  }
+  return actions;
+}
+function followUpActionFromTemplate(template, recordItemId, sectionKey, intent, label, summary, actionLabel2, actionHelper) {
+  const selectedAnchorRef = `patient-anchor:records:${recordItemId}`;
+  const oneExpandedItemGroupRef = `patient-record-group:${sectionKey}`;
+  const recordOriginContinuationRef = `record-origin-continuation:patient-record:${recordItemId}`;
+  const recoveryContinuationTokenRef = `recovery-continuation:patient-record:${recordItemId}`;
+  return {
+    ...template,
+    followUpActionProjectionId: `patient-record-follow-up:${intent}:${recordItemId}`,
+    recordItemId,
+    followUpIntent: intent,
+    label,
+    summary,
+    routeIntentRef: "patient-route-intent:record-follow-up",
+    recordActionContextTokenRef: `record-action-context:${recordItemId}:${intent}`,
+    recordOriginContinuationRef,
+    recoveryContinuationTokenRef,
+    selectedAnchorRef,
+    oneExpandedItemGroupRef,
+    navReturnContract: {
+      ...template.navReturnContract,
+      returnContractId: `patient-return-contract:record:${recordItemId}:${intent}`,
+      sourceSectionRef: `patient-record-section:${sectionKey}`,
+      returnRouteRef: `/records/${encodeURIComponent(recordItemId)}?recordSection=${encodeURIComponent(sectionKey)}`,
+      selectedAnchorRef,
+      selectedChildAnchorRef: null,
+      lastSafeSummary: "Return to this record summary after the next step.",
+      routeIntentBindingRef: `patient-route-intent:record-follow-up:${recordItemId}:${intent}`,
+      recordOriginContinuationRef,
+      recoveryContinuationRef: recoveryContinuationTokenRef
+    },
+    action: action5(
+      actionLabel2,
+      recordOriginActionHref(intent, recordItemId, sectionKey),
+      intent === "contact_repair" ? "caution" : intent === "read_only_recovery" ? "supportive" : "primary",
+      actionHelper
+    )
+  };
+}
+function templateForIntent(templates, intent) {
+  const template = templates.find((candidate) => candidate.followUpIntent === intent) ?? templates[0];
+  if (template === void 0) {
+    throw new Error("Patient record projection did not include a follow-up action template.");
+  }
+  return template;
+}
+function sectionsForProfile(baseSections, input) {
+  return baseSections.map((section) => {
+    switch (section.sectionKey) {
+      case "results":
+        return sectionForRecords(section, input.profile, input.results.length, "Recent results", `Results shared by ${input.profile.practice.practiceLabel}.`, input.results[0]?.primaryAction);
+      case "documents":
+        return sectionForRecords(section, input.profile, input.documentArtifacts.length, "Documents", `Notes and letters shared by ${input.profile.practice.practiceLabel}.`, input.documentArtifacts[0]?.primaryAction);
+      case "medicines":
+        return sectionForRecords(section, input.profile, input.medications.length, "Medicines", `Medicines summary shared by ${input.profile.practice.practiceLabel}.`, input.followUpActions.find((action9) => action9.followUpIntent === "booking")?.action);
+      case "follow_up":
+        return sectionForRecords(section, input.profile, input.followUpActions.length, "Next steps", "Actions you can take from these records.", input.followUpActions[0]?.action);
+    }
+  });
+}
+function sectionForRecords(section, profile, itemCount, title, summary, primaryAction) {
+  return {
+    ...section,
+    sectionRef: `patient-record-section:${profile.patientId}:${section.sectionKey}`,
+    title,
+    summary,
+    itemCount,
+    statusLabel: itemCount > 0 ? "Ready" : "No items",
+    selectedAnchorRef: `patient-anchor:records:${section.sectionKey}`,
+    ...primaryAction === void 0 || primaryAction === null ? {} : { primaryAction }
+  };
+}
+function hasRecordItem(recordItemId, results, medications, artifacts) {
+  return results.some((item) => item.recordItemId === recordItemId) || medications.some((item) => item.recordItemId === recordItemId) || artifacts.some((item) => item.recordItemId === recordItemId);
+}
+function seedPatientRecordSnapshot() {
+  return {
+    schemaVersion: "1.0",
+    records: demoPatientAccounts2.map(recordProfileForDemoPatient)
+  };
+}
+function recordProfileForDemoPatient(account) {
+  const clinician = clinicianForPractice2(account.practiceRef);
+  const practice = {
+    practiceRef: account.practiceRef,
+    practiceLabel: account.practiceLabel,
+    localityLabel: clinician.staffIdentity.practiceLocationLabel ?? account.practiceLabel
+  };
+  const clinicianRecord2 = {
+    staffRef: clinician.staffIdentity.staffRef,
+    displayName: clinician.displayName,
+    roleTitle: clinician.pilotProfile.roleTitle
+  };
+  return {
+    patientId: account.patientId,
+    requestBinding: { ...account.requestBinding },
+    practice,
+    clinician: clinicianRecord2,
+    recordRef: `patient-record:${account.patientId}`,
+    recordVersionRef: `patient-record-version:${account.patientId}:2026-06-demo`,
+    lastUpdatedLabel: account.patientId === "zaeem" ? "Updated 18 June 2026" : "Updated 17 June 2026",
+    safetySummary: `These are patient-safe summaries shared by ${practice.practiceLabel}. Use the latest instructions from your clinician if anything differs.`,
+    results: resultRecordsForDemoPatient(account, clinician),
+    medications: medicationRecordsForDemoPatient(account, clinician),
+    artifacts: artifactRecordsForDemoPatient(account, clinician)
+  };
+}
+function resultRecordsForDemoPatient(account, clinician) {
+  if (account.patientId === "zaeem") {
+    return [
+      {
+        recordItemId: "result-zaeem-medication-monitoring",
+        title: "Medication monitoring result",
+        summary: `${clinician.displayName} reviewed the monitoring result for Zaeem's repeat medicine query. No urgent action is recorded in this summary.`,
+        dateLabel: "18 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Reviewed",
+        comparisonSummary: "The practice marked the result as reviewed and suitable to discuss in the planned medication review.",
+        visibility: "visible"
+      }
+    ];
+  }
+  if (account.patientId === "maqbool") {
+    return [
+      {
+        recordItemId: "result-maqbool-same-day-review",
+        title: "Same-day care result summary",
+        summary: `${clinician.displayName} reviewed the same-day care notes and marked them ready for follow-up.`,
+        dateLabel: "17 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Reviewed",
+        comparisonSummary: "The practice marked this summary as reviewed for the Chelmsford same-day care team.",
+        visibility: "visible"
+      }
+    ];
+  }
+  return [];
+}
+function medicationRecordsForDemoPatient(account, clinician) {
+  if (account.patientId === "zaeem") {
+    return [
+      {
+        recordItemId: "medicine-zaeem-repeat-summary",
+        title: "Repeat medicines summary",
+        summary: `Repeat medicine details were reviewed by ${clinician.displayName} for the medication query.`,
+        lastReviewedLabel: "Reviewed 18 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Summary only",
+        safetyCaveat: "Use the instructions on the medicine label or the latest advice from the practice. This page is a summary, not a prescription."
+      }
+    ];
+  }
+  if (account.patientId === "maqbool") {
+    return [
+      {
+        recordItemId: "medicine-maqbool-current-summary",
+        title: "Current medicines summary",
+        summary: `Current medicine notes were reviewed by ${clinician.displayName} for the Chelmsford same-day care team.`,
+        lastReviewedLabel: "Reviewed 17 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Summary only",
+        safetyCaveat: "Use the latest instructions from the clinician or medicine label. This page is a summary, not a prescription."
+      }
+    ];
+  }
+  return [];
+}
+function artifactRecordsForDemoPatient(account, clinician) {
+  if (account.patientId === "zaeem") {
+    return [
+      {
+        recordItemId: "result-zaeem-medication-monitoring",
+        title: "Medication monitoring result summary",
+        summary: "A reviewed result summary is available from the medication monitoring record.",
+        dateLabel: "18 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Verified summary",
+        kind: "result_summary",
+        presentationMode: "structured_summary",
+        visibility: "visible"
+      },
+      {
+        recordItemId: "document-zaeem-medication-review-note",
+        title: "Medication review note",
+        summary: `${clinician.displayName} recorded the plan for Zaeem's medication query and upcoming review.`,
+        dateLabel: "18 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Ready to view",
+        kind: "document",
+        presentationMode: "governed_preview",
+        visibility: "visible"
+      },
+      {
+        recordItemId: "document-zaeem-blood-pressure-invitation",
+        title: "Blood pressure check invitation",
+        summary: `${account.practiceLabel} shared the invitation for the pending blood pressure check booking.`,
+        dateLabel: "18 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Source summary only",
+        kind: "document",
+        presentationMode: "structured_summary",
+        visibility: "source_only"
+      }
+    ];
+  }
+  if (account.patientId === "maqbool") {
+    return [
+      {
+        recordItemId: "result-maqbool-same-day-review",
+        title: "Same-day care result summary",
+        summary: "A reviewed same-day care result summary is available from Chelmsford Medical Practice.",
+        dateLabel: "17 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Verified summary",
+        kind: "result_summary",
+        presentationMode: "structured_summary",
+        visibility: "visible"
+      },
+      {
+        recordItemId: "document-maqbool-same-day-care-note",
+        title: "Same-day care review note",
+        summary: `${clinician.displayName} recorded the Chelmsford follow-up plan for Maqbool.`,
+        dateLabel: "17 June 2026",
+        sourceLabel: account.practiceLabel,
+        statusLabel: "Ready to view",
+        kind: "document",
+        presentationMode: "governed_preview",
+        visibility: "visible"
+      }
+    ];
+  }
+  return [];
+}
+function clinicianForPractice2(practiceRef) {
+  const clinician = demoClinicianAccounts2.find((candidate) => candidate.practiceRef === practiceRef) ?? demoClinicianAccounts2[0];
+  if (clinician === void 0) {
+    throw new Error("No demo clinician accounts are configured for record projections.");
+  }
+  return clinician;
+}
+function snapshotProfile2(profile) {
+  return {
+    patientId: profile.patientId,
+    requestBinding: { ...profile.requestBinding },
+    practice: { ...profile.practice },
+    clinician: { ...profile.clinician },
+    recordRef: profile.recordRef,
+    recordVersionRef: profile.recordVersionRef,
+    lastUpdatedLabel: profile.lastUpdatedLabel,
+    safetySummary: profile.safetySummary,
+    results: profile.results.map((result) => ({ ...result })),
+    medications: profile.medications.map((medication) => ({ ...medication })),
+    artifacts: profile.artifacts.map((artifact) => ({ ...artifact }))
+  };
+}
+function normalizedPersistenceFile4(value) {
+  const normalized = value?.trim();
+  return normalized === void 0 || normalized.length === 0 ? void 0 : normalized;
+}
+function loadSnapshotFromDisk4(filePath) {
+  let serialized;
+  try {
+    serialized = readFileSync4(filePath, "utf8");
+  } catch (error) {
+    if (isNodeErrorCode5(error, "ENOENT")) {
+      return void 0;
+    }
+    throw error;
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(serialized);
+  } catch (error) {
+    throw new Error(`Patient record persistence file at ${filePath} is not valid JSON.`, { cause: error });
+  }
+  return parseRecordSnapshot(parsed, filePath);
+}
+function parseRecordSnapshot(value, filePath) {
+  if (!isRecord27(value) || value.schemaVersion !== "1.0" || !Array.isArray(value.records)) {
+    throw new Error(`Patient record persistence file at ${filePath} does not match the record snapshot schema.`);
+  }
+  return {
+    schemaVersion: "1.0",
+    records: value.records.map((record2, index) => {
+      if (!isPatientRecordProfile(record2)) {
+        throw new Error(`Patient record persistence file at ${filePath} has an invalid record at index ${index}.`);
+      }
+      return snapshotProfile2(record2);
+    })
+  };
+}
+function isPatientRecordProfile(value) {
+  return isRecord27(value) && typeof value.patientId === "string" && isRequestBinding3(value.requestBinding) && isPractice(value.practice) && isClinician(value.clinician) && typeof value.recordRef === "string" && typeof value.recordVersionRef === "string" && typeof value.lastUpdatedLabel === "string" && typeof value.safetySummary === "string" && Array.isArray(value.results) && value.results.every(isStoredResult) && Array.isArray(value.medications) && value.medications.every(isStoredMedication) && Array.isArray(value.artifacts) && value.artifacts.every(isStoredArtifact);
+}
+function isRequestBinding3(value) {
+  return isRecord27(value) && typeof value.sessionRef === "string" && typeof value.csrfToken === "string";
+}
+function isPractice(value) {
+  return isRecord27(value) && typeof value.practiceRef === "string" && typeof value.practiceLabel === "string" && typeof value.localityLabel === "string";
+}
+function isClinician(value) {
+  return isRecord27(value) && typeof value.staffRef === "string" && typeof value.displayName === "string" && typeof value.roleTitle === "string";
+}
+function isStoredResult(value) {
+  return isRecord27(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.dateLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && typeof value.comparisonSummary === "string" && isStoredVisibility(value.visibility);
+}
+function isStoredMedication(value) {
+  return isRecord27(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.lastReviewedLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && typeof value.safetyCaveat === "string";
+}
+function isStoredArtifact(value) {
+  return isRecord27(value) && typeof value.recordItemId === "string" && typeof value.title === "string" && typeof value.summary === "string" && typeof value.dateLabel === "string" && typeof value.sourceLabel === "string" && typeof value.statusLabel === "string" && (value.kind === "result_summary" || value.kind === "document") && isPresentationMode(value.presentationMode) && isStoredVisibility(value.visibility);
+}
+function isPresentationMode(value) {
+  return value === "structured_summary" || value === "governed_preview" || value === "governed_download" || value === "external_handoff" || value === "placeholder_only" || value === "recovery_only";
+}
+function isStoredVisibility(value) {
+  return value === "visible" || value === "source_only";
+}
+function recordOriginActionHref(intent, recordItemId, sectionKey) {
+  const recordOriginContinuationRef = `record-origin-continuation:patient-record:${recordItemId}`;
+  const params = new URLSearchParams({
+    recordOriginIntent: intent,
+    recordOriginContinuationRef
+  });
+  switch (intent) {
+    case "message_clinician":
+      params.set("returnRequestRef", "trk_records_followup");
+      return `/messages/msg_record_question?${params.toString()}#composer`;
+    case "request_follow_up":
+      params.set("returnRequestRef", "trk_records_followup");
+      params.set("requestType", "admin");
+      return `/request/new/details?${params.toString()}`;
+    case "booking":
+      params.set("returnRequestRef", "trk_records_booking");
+      return `/bookings/bkg_seed?${params.toString()}`;
+    case "contact_repair":
+      params.set("returnRequestRef", "trk_callback_repair");
+      params.set("recordOriginState", "blocked");
+      return `/contact/repair/repair_callback_voice?${params.toString()}`;
+    case "return_to_record":
+      return `/records/${encodeURIComponent(recordItemId)}?recordSection=${encodeURIComponent(sectionKey)}`;
+    case "read_only_recovery":
+      params.set("recordOriginState", "stale");
+      params.set("recordSection", sectionKey);
+      return `/records/${encodeURIComponent(recordItemId)}?${params.toString()}`;
+  }
+}
+function action5(label, href, tone, helper) {
+  return {
+    label,
+    href,
+    tone,
+    helper
+  };
+}
+function isRecord27(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function isNodeErrorCode5(error, code) {
+  return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
 // services/api-gateway/src/services/patient-receipt.service.ts
 var PatientReceiptServiceError = class extends Error {
   statusCode;
@@ -60237,8 +60879,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "low_assurance",
         identityState: "lowAssurance",
         reason: "identity_hold",
-        primaryAction: action5("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."),
-        secondaryAction: action5("Return home", "/", "supportive", "Go back to the patient portal home page.")
+        primaryAction: action6("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."),
+        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page.")
       });
     case "claim_pending":
       return content({
@@ -60248,8 +60890,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "claim_pending",
         identityState: "claimPending",
         reason: "identity_hold",
-        primaryAction: action5("Continue account check", "/auth/callback", "primary", "Continue the account check."),
-        secondaryAction: action5("Check status only", "/status/trk_statuspreview", "supportive", "Open the latest status without changing anything.")
+        primaryAction: action6("Continue account check", "/auth/callback", "primary", "Continue the account check."),
+        secondaryAction: action6("Check status only", "/status/trk_statuspreview", "supportive", "Open the latest status without changing anything.")
       });
     case "wrong_patient_correction":
       return content({
@@ -60259,8 +60901,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "recovery_only",
         identityState: "recoveryOnly",
         reason: "identity_repair_required",
-        primaryAction: action5("Get help", "/recovery", "primary", "Get help without showing private details."),
-        secondaryAction: action5("Sign out", "/account/sign-out", "supportive", "End this sign-in."),
+        primaryAction: action6("Get help", "/recovery", "primary", "Get help without showing private details."),
+        secondaryAction: action6("Sign out", "/account/sign-out", "supportive", "End this sign-in."),
         nextStep: {
           heading: "What happens next",
           body: "We may ask you to confirm it is you before account access returns."
@@ -60274,8 +60916,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "recovery_only",
         identityState: "supportRequired",
         reason: "identity_repair_required",
-        primaryAction: action5("Get help", "/recovery", "primary", "Get help without showing private details."),
-        secondaryAction: action5("Return home", "/", "supportive", "Go back to the patient portal home page."),
+        primaryAction: action6("Get help", "/recovery", "primary", "Get help without showing private details."),
+        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page."),
         nextStep: {
           heading: "Account help",
           body: "Get help so access can be corrected before private details are shown again."
@@ -60289,8 +60931,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "recovery_only",
         identityState: "recoveryOnly",
         reason: "support_required",
-        primaryAction: action5("Get help", "/recovery", "primary", "Continue with an account check."),
-        secondaryAction: action5("Return home", "/", "supportive", "Go back to the patient portal home page.")
+        primaryAction: action6("Get help", "/recovery", "primary", "Continue with an account check."),
+        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page.")
       });
     case "reauth_required":
       return content({
@@ -60300,8 +60942,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "reauth_required",
         identityState: "reauthRequired",
         reason: "stale_session",
-        primaryAction: action5("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."),
-        secondaryAction: action5("Get support", "/account/recovery/recovery-only", "supportive", "Use account support if confirmation cannot complete.")
+        primaryAction: action6("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."),
+        secondaryAction: action6("Get support", "/account/recovery/recovery-only", "supportive", "Use account support if confirmation cannot complete.")
       });
     case "restricted_by_age_or_policy":
       return content({
@@ -60311,8 +60953,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "restricted",
         identityState: "restricted",
         reason: "denied_scope",
-        primaryAction: action5("Get help", "/recovery", "primary", "Get help without showing private details."),
-        secondaryAction: action5("Sign out", "/account/sign-out", "supportive", "End this sign-in."),
+        primaryAction: action6("Get help", "/recovery", "primary", "Get help without showing private details."),
+        secondaryAction: action6("Sign out", "/account/sign-out", "supportive", "End this sign-in."),
         nextStep: {
           heading: "What happens next",
           body: "We can help you continue with the options available for your account."
@@ -60326,8 +60968,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "signed_out",
         identityState: "supportRequired",
         reason: "consent_declined",
-        primaryAction: action5("Review sign-in choices", "/auth/callback", "primary", "Review the sign-in choice again."),
-        secondaryAction: action5("Start without signing in", "/start", "supportive", "Begin a request without signing in.")
+        primaryAction: action6("Review sign-in choices", "/auth/callback", "primary", "Review the sign-in choice again."),
+        secondaryAction: action6("Start without signing in", "/start", "supportive", "Begin a request without signing in.")
       });
     case "continuation_link_expired":
       return content({
@@ -60337,8 +60979,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "expired",
         identityState: "expired",
         reason: "expired",
-        primaryAction: action5("Start again", "/start", "primary", "Begin a fresh request."),
-        secondaryAction: action5("Get help", "/recovery", "supportive", "Open help to continue.")
+        primaryAction: action6("Start again", "/start", "primary", "Begin a fresh request."),
+        secondaryAction: action6("Get help", "/recovery", "supportive", "Open help to continue.")
       });
     case "continuation_link_already_used":
       return content({
@@ -60348,8 +60990,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "recovery_only",
         identityState: "recoveryOnly",
         reason: "already_used",
-        primaryAction: action5("Check status", "/status/trk_statuspreview", "primary", "Open the latest status."),
-        secondaryAction: action5("Return home", "/", "supportive", "Go back to the patient portal home page.")
+        primaryAction: action6("Check status", "/status/trk_statuspreview", "primary", "Open the latest status."),
+        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page.")
       });
     case "continuation_link_superseded":
       return content({
@@ -60359,8 +61001,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "recovery_only",
         identityState: "recoveryOnly",
         reason: "superseded",
-        primaryAction: action5("Get help", "/recovery", "primary", "Open help to continue."),
-        secondaryAction: action5("Return home", "/", "supportive", "Go back to the patient portal home page.")
+        primaryAction: action6("Get help", "/recovery", "primary", "Open help to continue."),
+        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page.")
       });
     case "secure_link_subject_mismatch":
       return content({
@@ -60370,8 +61012,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "recovery_only",
         identityState: "recoveryOnly",
         reason: "identity_hold",
-        primaryAction: action5("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."),
-        secondaryAction: action5("Get help", "/recovery", "supportive", "Open help to continue."),
+        primaryAction: action6("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."),
+        secondaryAction: action6("Get help", "/recovery", "supportive", "Open help to continue."),
         nextStep: {
           heading: "What happens next",
           body: "The page will continue only if the link matches the person using it."
@@ -60385,8 +61027,8 @@ function identityHoldRecoveryContentForFamily(stateFamily) {
         sessionPosture: "expired",
         identityState: "expired",
         reason: "stale_session",
-        primaryAction: action5("Sign in again", "/auth/callback", "primary", "Start a fresh sign-in check."),
-        secondaryAction: action5("Return home", "/", "supportive", "Go back to the patient portal home page.")
+        primaryAction: action6("Sign in again", "/auth/callback", "primary", "Start a fresh sign-in check."),
+        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page.")
       });
   }
 }
@@ -60396,7 +61038,7 @@ function content(input) {
     ...input
   };
 }
-function action5(label, href, tone, helper) {
+function action6(label, href, tone, helper) {
   return {
     label,
     href,
@@ -60775,8 +61417,8 @@ function recordOriginContinuationDecisionForRoute(route, copy, flags) {
     intent,
     destinationRouteRef
   });
-  const primaryAction = recovery?.action ?? action6(recordOriginPrimaryActionLabel(intent), destinationRouteRef, intent === "contact_repair" ? "caution" : "primary", recordOriginPrimaryActionHelper(intent));
-  const secondaryAction = action6("Return to record", navReturnContract.returnRouteRef, "supportive", "Go back to the originating record item.");
+  const primaryAction = recovery?.action ?? action7(recordOriginPrimaryActionLabel(intent), destinationRouteRef, intent === "contact_repair" ? "caution" : "primary", recordOriginPrimaryActionHelper(intent));
+  const secondaryAction = action7("Return to record", navReturnContract.returnRouteRef, "supportive", "Go back to the originating record item.");
   const envelope = {
     continuationEnvelopeId: `record-origin-envelope:${stableRecoveryHash([
       origin.recordOriginContinuationRef,
@@ -61001,7 +61643,7 @@ function recordOriginRecoveryProjectionForState(input) {
   }
   const contactRepair = input.intent === "contact_repair" || input.state === "blocked";
   const stale = input.state === "stale" || input.state === "read_only" || input.state === "recovery_required";
-  const actionHref = contactRepair ? recordOriginActionHref("contact_repair", input.origin.recordItemId, input.origin.sectionKey) : input.origin.selectedAnchorRef.startsWith("patient-anchor:records:") ? input.origin.oneExpandedItemGroupRef : input.destinationRouteRef;
+  const actionHref = contactRepair ? recordOriginActionHref2("contact_repair", input.origin.recordItemId, input.origin.sectionKey) : input.origin.selectedAnchorRef.startsWith("patient-anchor:records:") ? input.origin.oneExpandedItemGroupRef : input.destinationRouteRef;
   return {
     recoveryProjectionId: `record-origin-recovery:${stableRecoveryHash([
       input.origin.recordOriginContinuationRef,
@@ -61014,7 +61656,7 @@ function recordOriginRecoveryProjectionForState(input) {
     reasonCodes: contactRepair ? ["reachability_repair_required"] : ["record_origin_context_stale"],
     freezeMutations: stale || contactRepair,
     recoveryContinuationTokenRef: input.origin.recoveryContinuationTokenRef,
-    action: action6(contactRepair ? "Check contact details" : "Refresh record", contactRepair ? actionHref : input.destinationRouteRef, contactRepair ? "caution" : "supportive", contactRepair ? "Check contact details before continuing." : "Refresh this record before continuing.")
+    action: action7(contactRepair ? "Check contact details" : "Refresh record", contactRepair ? actionHref : input.destinationRouteRef, contactRepair ? "caution" : "supportive", contactRepair ? "Check contact details before continuing." : "Refresh this record before continuing.")
   };
 }
 function recordOriginIntentFromRoute(route) {
@@ -61274,7 +61916,7 @@ function recordOriginVisibilityNarrowingSummary(snapshot) {
 function recordOriginContinuationRefForItem(recordItemId) {
   return `record-origin-continuation:patient-record:${recordItemId}`;
 }
-function recordOriginActionHref(intent, recordItemId, sectionKey) {
+function recordOriginActionHref2(intent, recordItemId, sectionKey) {
   const recordOriginContinuationRef = recordOriginContinuationRefForItem(recordItemId);
   const params = new URLSearchParams({
     recordOriginIntent: intent,
@@ -61331,12 +61973,14 @@ function safeProjectionRoute(route) {
   return {
     key: "secureLink",
     path: "/secure-link/checking",
-    params: {}
+    params: {
+      secureLinkToken: "checking"
+    }
   };
 }
 function adaptPatientStatusProjection(response, route, context = {}) {
   const status = patientStatusWithShellRoutes(response.status);
-  const statusPrimaryAction = action6(status.nextAction.label, status.nextAction.href, status.nextAction.tone, status.nextAction.label);
+  const statusPrimaryAction = action7(status.nextAction.label, status.nextAction.href, status.nextAction.tone, status.nextAction.label);
   const actionRecovery = status.state === "recovery_required" ? actionRecoveryProjection({
     reason: "support_required",
     primary: statusPrimaryAction,
@@ -61430,7 +62074,7 @@ function adaptPatientReceiptProjection(response, route, context = {}) {
     eyebrow: "Request receipt",
     summary: receipt.summary,
     session,
-    primaryAction: action6(primaryReceiptAction.label, primaryReceiptAction.href, primaryReceiptAction.tone, primaryReceiptActionHelper),
+    primaryAction: action7(primaryReceiptAction.label, primaryReceiptAction.href, primaryReceiptAction.tone, primaryReceiptActionHelper),
     sections: [
       {
         heading: "Tracking reference",
@@ -61453,7 +62097,7 @@ function adaptPatientReceiptProjection(response, route, context = {}) {
     summary: receipt.summary,
     session,
     portalEntry: portalEntryProjectionForRoute(matchedRoute, copy, session, context),
-    primaryAction: action6(primaryReceiptAction.label, primaryReceiptAction.href, primaryReceiptAction.tone, primaryReceiptActionHelper),
+    primaryAction: action7(primaryReceiptAction.label, primaryReceiptAction.href, primaryReceiptAction.tone, primaryReceiptActionHelper),
     secondaryActions: secondaryActionsForRoute(matchedRoute),
     ambientState: ambientStateForReceipt(receipt),
     casePulse: pulseForReceipt(receipt),
@@ -61540,7 +62184,7 @@ function copyForRoute(route, flags) {
         pageTitle: flags.authenticatedHome ? "Your care requests" : "Care requests",
         eyebrow: "Patient portal",
         summary: "Start a request, continue a saved form, or check the progress of a request using the details already shared with you.",
-        primaryAction: action6("Start a request", "/start", "primary", "Begin with a short safety check."),
+        primaryAction: action7("Start a request", "/start", "primary", "Begin with a short safety check."),
         session: patientSessionProjectionForPosture("signed_out"),
         sections: [
           {
@@ -61596,7 +62240,7 @@ function copyForRoute(route, flags) {
         pageTitle: intakeContent.safety.start.heading,
         eyebrow: "Safety first",
         summary: intakeContent.safety.start.body,
-        primaryAction: action6(intakeContent.safety.start.actionLabel ?? "Continue to request details", "/request/new/type", "primary", "Move on after checking the safety guidance."),
+        primaryAction: action7(intakeContent.safety.start.actionLabel ?? "Continue to request details", "/request/new/type", "primary", "Move on after checking the safety guidance."),
         sections: [
           {
             heading: intakeContent.safety.emergency.heading,
@@ -61614,7 +62258,7 @@ function copyForRoute(route, flags) {
         pageTitle: intakeContent.requestType.heading,
         eyebrow: "Request details",
         summary: intakeContent.requestType.summary,
-        primaryAction: action6("Continue", "/request/new/details", "primary", "Continue after choosing an option."),
+        primaryAction: action7("Continue", "/request/new/details", "primary", "Continue after choosing an option."),
         sections: [],
         intakeFlow: intakeFlowForStep("request_type", flags),
         intakeRequestTypeStep: requestTypeStep(flags),
@@ -61629,7 +62273,7 @@ function copyForRoute(route, flags) {
         pageTitle: intakeContent.requestType.heading,
         eyebrow: "Request details",
         summary: intakeContent.requestType.summary,
-        primaryAction: action6("Continue", "/request/new/details", "primary", "Continue after choosing an option."),
+        primaryAction: action7("Continue", "/request/new/details", "primary", "Continue after choosing an option."),
         sections: [],
         intakeFlow: intakeFlowForStep("request_type", flags),
         intakeRequestTypeStep: requestTypeStep(flags),
@@ -61644,7 +62288,7 @@ function copyForRoute(route, flags) {
         pageTitle: intakeContent.details.heading,
         eyebrow: "Request details",
         summary: intakeContent.details.summary,
-        primaryAction: action6("Continue to files", "/request/new/files", "primary", "Continue after the details are saved."),
+        primaryAction: action7("Continue to files", "/request/new/files", "primary", "Continue after the details are saved."),
         sections: [],
         intakeFlow: intakeFlowForStep("details", flags),
         intakeDetailStep: detailStep(flags),
@@ -61658,7 +62302,7 @@ function copyForRoute(route, flags) {
         pageTitle: intakeContent.upload.heading,
         eyebrow: "Supporting context",
         summary: flags.attachmentUpload ? intakeContent.upload.guidance : "File upload is not available in this environment. Continue to contact preference.",
-        primaryAction: action6("Continue to contact preference", "/request/new/contact", "primary", "Continue after the file step."),
+        primaryAction: action7("Continue to contact preference", "/request/new/contact", "primary", "Continue after the file step."),
         sections: [],
         intakeFlow: intakeFlowForStep("attachments", flags),
         ...uploadStep === void 0 ? {} : { attachmentUploadStep: uploadStep },
@@ -61670,7 +62314,7 @@ function copyForRoute(route, flags) {
         pageTitle: intakeContent.contact.heading,
         eyebrow: "Contact preference",
         summary: intakeContent.contact.summary,
-        primaryAction: action6("Continue to review", "/request/new/review", "primary", "Continue after contact preference is saved."),
+        primaryAction: action7("Continue to review", "/request/new/review", "primary", "Continue after contact preference is saved."),
         sections: [],
         intakeFlow: intakeFlowForStep("contact_preferences", flags),
         contactPreferenceStep: contactPreferenceStep(flags)
@@ -61680,7 +62324,7 @@ function copyForRoute(route, flags) {
         pageTitle: "Review and submit",
         eyebrow: "Final check",
         summary: intakeContent.submit.summary,
-        primaryAction: action6(intakeContent.submit.primaryLabel, "/request/new/review#submit-request", "primary", "Review the request before sending."),
+        primaryAction: action7(intakeContent.submit.primaryLabel, "/request/new/review#submit-request", "primary", "Review the request before sending."),
         sections: [],
         intakeFlow: intakeFlowForStep("review", flags)
       };
@@ -61690,7 +62334,7 @@ function copyForRoute(route, flags) {
         pageTitle: "Request receipt",
         eyebrow: "Request receipt",
         summary: "We are checking the receipt for this request.",
-        primaryAction: action6("Check status", patientStatusShellHref(requestPublicId), "primary", "Open the request status."),
+        primaryAction: action7("Check status", patientStatusShellHref(requestPublicId), "primary", "Open the request status."),
         sections: []
       };
     }
@@ -61713,7 +62357,7 @@ function copyForRoute(route, flags) {
         pageTitle: "Status check",
         eyebrow: "Tracking",
         summary: "The tracking link confirms whether the latest status is ready and up to date.",
-        primaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page."),
+        primaryAction: action7("Return home", "/", "supportive", "Go back to the patient portal home page."),
         sections: []
       };
     case "resume":
@@ -61721,7 +62365,7 @@ function copyForRoute(route, flags) {
         pageTitle: "Resume request",
         eyebrow: "Saved draft",
         summary: "The resume link is being checked before any saved information is shown.",
-        primaryAction: action6("Continue draft", "/request/new", "primary", "Open the saved request draft after the link check."),
+        primaryAction: action7("Continue draft", "/request/new", "primary", "Open the saved request draft after the link check."),
         sections: [
           {
             heading: "Link check",
@@ -61738,7 +62382,7 @@ function copyForRoute(route, flags) {
     case "authCallback":
       return nhsAppSsoAuthCallbackCopy(route);
     case "recovery": {
-      const primary = action6("Start again", "/start", "primary", "Begin a fresh request journey.");
+      const primary = action7("Start again", "/start", "primary", "Begin a fresh request journey.");
       const actionRecovery = actionRecoveryProjection({
         reason: "support_required",
         primary,
@@ -62045,7 +62689,7 @@ function patientContactRepairProjectionForRoute(route) {
   const selectedAnchorRef = route.params.selectedAnchorRef ?? scenario2.selectedAnchorRef;
   const verificationCheckpointRef = contactRepairVerificationCheckpointRef(scenario2);
   const resultingReachabilityAssessmentRef = contactRepairResultingAssessmentRef(scenario2);
-  const returnAction = action6(scenario2.returnLabel, scenario2.returnHref, "supportive", `Return to the blocked ${scenario2.blockedActionLabel} context.`);
+  const returnAction = action7(scenario2.returnLabel, scenario2.returnHref, "supportive", `Return to the blocked ${scenario2.blockedActionLabel} context.`);
   const primaryAction = contactRepairPrimaryAction(scenario2, returnAction);
   const reachabilitySummary = contactRepairReachabilitySummary({
     scenario: scenario2,
@@ -62130,23 +62774,23 @@ function contactRepairResultingAssessmentRef(scenario2) {
 }
 function contactRepairPrimaryAction(scenario2, returnAction) {
   if (scenario2.identityGateState === "step_up_required") {
-    return action6("Confirm access", "/auth/callback", "primary", "Confirm access before editing contact details.");
+    return action7("Confirm access", "/auth/callback", "primary", "Confirm access before editing contact details.");
   }
   switch (scenario2.repairState) {
     case "ready":
-      return action6("Update contact details", `/contact/repair/${scenario2.repairJourneyId}#collect`, "primary", `Update contact details before ${scenario2.blockedActionLabel}.`);
+      return action7("Update contact details", `/contact/repair/${scenario2.repairJourneyId}#collect`, "primary", `Update contact details before ${scenario2.blockedActionLabel}.`);
     case "collecting_route":
-      return action6("Continue to check", `/contact/repair/${scenario2.repairJourneyId}#verify`, "primary", "Check the new contact detail before this can continue.");
+      return action7("Continue to check", `/contact/repair/${scenario2.repairJourneyId}#verify`, "primary", "Check the new contact detail before this can continue.");
     case "awaiting_verification":
-      return action6("Check contact detail", `/contact/repair/${scenario2.repairJourneyId}#verify`, "primary", "Confirm the contact detail check.");
+      return action7("Check contact detail", `/contact/repair/${scenario2.repairJourneyId}#verify`, "primary", "Confirm the contact detail check.");
     case "rebound_pending":
-      return action6("Finish setup", `/contact/repair/${scenario2.repairJourneyId}#rebound`, "primary", "Finish this check before returning to the request.");
+      return action7("Finish setup", `/contact/repair/${scenario2.repairJourneyId}#rebound`, "primary", "Finish this check before returning to the request.");
     case "completed":
       return returnAction;
     case "recovery_required":
-      return action6("Get help", "/recovery", "primary", "Get help to finish this contact check safely.");
+      return action7("Get help", "/recovery", "primary", "Get help to finish this contact check safely.");
     case "stale":
-      return action6("Refresh contact check", `/contact/repair/${scenario2.repairJourneyId}`, "primary", "Refresh this contact check before continuing.");
+      return action7("Refresh contact check", `/contact/repair/${scenario2.repairJourneyId}`, "primary", "Refresh this contact check before continuing.");
   }
 }
 function contactRepairReachabilitySummary(input) {
@@ -62194,7 +62838,7 @@ function contactRepairVerificationCheckpoint(scenario2, verificationCheckpointRe
     statusLabel: verified ? "Verification passed" : scenario2.repairState === "awaiting_verification" ? "Code sent" : "Not started",
     instruction: checkpointState === "not_started" ? "We will check this before it is used for the waiting request." : "Enter the verification code we send before this is used.",
     requiresPatientEntry: checkpointState === "code_sent",
-    action: contactRepairPrimaryAction(scenario2, action6(scenario2.returnLabel, scenario2.returnHref, "supportive", `Return to ${scenario2.blockedActionLabel}.`)),
+    action: contactRepairPrimaryAction(scenario2, action7(scenario2.returnLabel, scenario2.returnHref, "supportive", `Return to ${scenario2.blockedActionLabel}.`)),
     createdAt: verificationCheckpointRef === null ? null : renderedAt
   };
 }
@@ -62421,7 +63065,7 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "none",
       deliveryRiskState: "on_track",
       authoritativeOutcomeState: "awaiting_reply",
-      dominantAction: gatedAction(action6("Reply", "/messages/msg_medication_reply#composer", "primary", "Reply in this conversation."), session, "write"),
+      dominantAction: gatedAction(action7("Reply", "/messages/msg_medication_reply#composer", "primary", "Reply in this conversation."), session, "write"),
       composerLeaseState: "active",
       composerDraftSummary: "Draft is kept in memory for this selected thread.",
       chipLabels: ["Reply needed", "Unread 2", "Secure message"],
@@ -62465,7 +63109,7 @@ function conversationSeedFixtures(session, computedAt) {
       authoritativeOutcomeState: "recovery_required",
       contactRepairJourneyRef: "contact-route-repair-journey:repair_callback_voice",
       recoveryRouteRef: "/contact/repair/repair_callback_voice?returnRequestRef=trk_callback_repair&selectedAnchorRef=patient-anchor:messages:msg_callback_repair",
-      dominantAction: gatedAction(action6("Check contact details", "/contact/repair/repair_callback_voice?returnRequestRef=trk_callback_repair&selectedAnchorRef=patient-anchor:messages:msg_callback_repair", "caution", "Check contact details before callbacks or replies continue."), session, "write"),
+      dominantAction: gatedAction(action7("Check contact details", "/contact/repair/repair_callback_voice?returnRequestRef=trk_callback_repair&selectedAnchorRef=patient-anchor:messages:msg_callback_repair", "caution", "Check contact details before callbacks or replies continue."), session, "write"),
       composerLeaseState: "blocked",
       sendEligibilityState: "blocked_contact_repair",
       composerDraftSummary: "Any draft stays with this thread while contact details are checked.",
@@ -62507,7 +63151,7 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "none",
       deliveryRiskState: "on_track",
       authoritativeOutcomeState: "awaiting_reply",
-      dominantAction: gatedAction(action6("Ask question", "/messages/msg_record_question#composer", "primary", "Ask about the selected record summary."), session, "write"),
+      dominantAction: gatedAction(action7("Ask question", "/messages/msg_record_question#composer", "primary", "Ask about the selected record summary."), session, "write"),
       composerLeaseState: "active",
       composerDraftSummary: "Your question stays with this record summary until it is sent.",
       chipLabels: ["Question ready", "Record follow-up"],
@@ -62540,7 +63184,7 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "none",
       deliveryRiskState: "on_track",
       authoritativeOutcomeState: "awaiting_review",
-      dominantAction: gatedAction(action6("View thread", "/messages/msg_reviewing_reply", "supportive", "Read the thread summary."), session, "read"),
+      dominantAction: gatedAction(action7("View thread", "/messages/msg_reviewing_reply", "supportive", "Read the thread summary."), session, "read"),
       composerLeaseState: "released",
       chipLabels: ["Awaiting review", "Record follow-up"],
       subthreads: [
@@ -62572,7 +63216,7 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "none",
       deliveryRiskState: "at_risk",
       authoritativeOutcomeState: "awaiting_delivery_truth",
-      dominantAction: gatedAction(action6("Review updates", "/messages/msg_booking_pharmacy", "supportive", "Review booking and pharmacy correspondence."), session, "read"),
+      dominantAction: gatedAction(action7("Review updates", "/messages/msg_booking_pharmacy", "supportive", "Review booking and pharmacy correspondence."), session, "read"),
       composerLeaseState: "released",
       chipLabels: ["Booking", "Pharmacy", "Hub update"],
       subthreads: [
@@ -62622,7 +63266,7 @@ function conversationSeedFixtures(session, computedAt) {
       authoritativeOutcomeState: "awaiting_delivery_truth",
       visibilityTier: "placeholder_only",
       previewMode: "step_up_required",
-      dominantAction: gatedAction(action6("Confirm access", "/auth/callback", "primary", "Confirm access before private message detail is shown."), session, "write"),
+      dominantAction: gatedAction(action7("Confirm access", "/auth/callback", "primary", "Confirm access before private message detail is shown."), session, "write"),
       composerLeaseState: "blocked",
       sendEligibilityState: "blocked_stale_thread",
       staleThreadState: "continuity_blocked",
@@ -62656,7 +63300,7 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "none",
       deliveryRiskState: "on_track",
       authoritativeOutcomeState: "settled",
-      dominantAction: gatedAction(action6("View closed thread", "/messages/msg_closed_summary", "supportive", "Review read-only history for this closed conversation."), session, "read"),
+      dominantAction: gatedAction(action7("View closed thread", "/messages/msg_closed_summary", "supportive", "Review read-only history for this closed conversation."), session, "read"),
       composerLeaseState: "released",
       readOnlyProvenance: true,
       chipLabels: ["Closed", "Read only"],
@@ -62689,7 +63333,7 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "recovery_required",
       deliveryRiskState: "at_risk",
       authoritativeOutcomeState: "recovery_required",
-      dominantAction: action6("Get urgent guidance", "/start", "caution", "Use urgent guidance instead of sending a message."),
+      dominantAction: action7("Get urgent guidance", "/start", "caution", "Use urgent guidance instead of sending a message."),
       composerLeaseState: "blocked",
       sendEligibilityState: "blocked_urgent",
       composerDraftSummary: "Your draft stays visible while urgent guidance is active.",
@@ -62724,7 +63368,7 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "none",
       deliveryRiskState: "at_risk",
       authoritativeOutcomeState: "awaiting_delivery_truth",
-      dominantAction: gatedAction(action6("Resume draft", "/messages/msg_medication_reply#composer", "supportive", "Open the refreshed conversation before sending."), session, "read"),
+      dominantAction: gatedAction(action7("Resume draft", "/messages/msg_medication_reply#composer", "supportive", "Open the refreshed conversation before sending."), session, "read"),
       composerLeaseState: "resume_required",
       sendEligibilityState: "resume_required",
       staleThreadState: "stale_thread",
@@ -62759,7 +63403,7 @@ function conversationSeedFixtures(session, computedAt) {
       repairRequiredState: "none",
       deliveryRiskState: "at_risk",
       authoritativeOutcomeState: "awaiting_delivery_truth",
-      dominantAction: gatedAction(action6("Restart reply", "/messages/msg_medication_reply#composer", "supportive", "Open a fresh reply before sending."), session, "read"),
+      dominantAction: gatedAction(action7("Restart reply", "/messages/msg_medication_reply#composer", "supportive", "Open a fresh reply before sending."), session, "read"),
       composerLeaseState: "resume_required",
       sendEligibilityState: "resume_required",
       staleThreadState: "expired_lease",
@@ -62798,7 +63442,7 @@ function conversationSeedFixtures(session, computedAt) {
       releaseState: "frozen",
       requiredReleaseApprovalFreezeRef: "release-freeze:patient-web-current",
       channelReleaseFreezeState: "frozen",
-      dominantAction: gatedAction(action6("Review safely", "/messages/msg_release_freeze", "supportive", "Read the latest available thread summary."), session, "read"),
+      dominantAction: gatedAction(action7("Review safely", "/messages/msg_release_freeze", "supportive", "Read the latest available thread summary."), session, "read"),
       composerLeaseState: "blocked",
       sendEligibilityState: "blocked_release_freeze",
       staleThreadState: "continuity_blocked",
@@ -62837,7 +63481,7 @@ function conversationRequestReplyFixture(session, computedAt, requestPublicId) {
     repairRequiredState: "none",
     deliveryRiskState: "on_track",
     authoritativeOutcomeState: "awaiting_reply",
-    dominantAction: gatedAction(action6("Reply", `/messages/${threadId}#composer`, "primary", "Reply in this conversation."), session, "write"),
+    dominantAction: gatedAction(action7("Reply", `/messages/${threadId}#composer`, "primary", "Reply in this conversation."), session, "write"),
     composerLeaseState: "active",
     composerDraftSummary: "Draft is kept for this request reply.",
     chipLabels: ["Reply needed", "Secure message", requestPublicId],
@@ -63921,7 +64565,7 @@ function patientNavReturnContractFromRequestBundle(input) {
   const reasonCodes = patientReturnReasonCodes(restoreState, input.route);
   const canRestoreLive = restoreState === "ready" || restoreState === "degraded";
   const changedSinceSeenCues = patientChangedSinceSeenCues(input.summary, input.downstream, input.bundle.issuedAt);
-  const primaryAction = action6(restoreState === "blocked" ? "Get help" : restoreState === "recovery_only" ? "Recheck safely" : restoreState === "degraded" ? "Refresh safely" : "Return to request", canRestoreLive ? input.bundle.returnRouteRef : "/recovery", restoreState === "blocked" ? "caution" : restoreState === "ready" ? "primary" : "supportive", restoreState === "ready" ? "Return to the preserved request context." : "Recheck the preserved context before continuing.");
+  const primaryAction = action7(restoreState === "blocked" ? "Get help" : restoreState === "recovery_only" ? "Recheck safely" : restoreState === "degraded" ? "Refresh safely" : "Return to request", canRestoreLive ? input.bundle.returnRouteRef : "/recovery", restoreState === "blocked" ? "caution" : restoreState === "ready" ? "primary" : "supportive", restoreState === "ready" ? "Return to the preserved request context." : "Recheck the preserved context before continuing.");
   return {
     returnContractId: input.bundle.navReturnContractRef,
     patientShellContinuityKey: input.bundle.patientShellContinuityKey,
@@ -64779,7 +65423,7 @@ function patientRequestsIndexForSession(session, route) {
     selectedRow?.lineageTupleHash ?? "none",
     selectedRow?.selectedChildAnchorTupleHash ?? "none"
   ])}`;
-  const dominantAction = selectedRow?.dominantAction ?? gatedAction(action6("Start a request", "/request/new", "primary", "Start a new request."), session, "write");
+  const dominantAction = selectedRow?.dominantAction ?? gatedAction(action7("Start a request", "/request/new", "primary", "Start a new request."), session, "write");
   return {
     patientRequestsIndexProjectionId: `patient-requests-index:${stableRecoveryHash([
       session.posture,
@@ -64853,7 +65497,7 @@ function requestIndexEntryFromFixture(input) {
   const summaryProjectionRef = `patient-request-summary:${requestRef}`;
   const lineageProjectionRef = `patient-request-lineage:${requestRef}`;
   const detailProjectionRef = `patient-request-detail:${requestRef}`;
-  const actionProjection3 = gatedAction(action6(input.fixture.actionLabel, input.fixture.actionHref, input.fixture.actionTone, input.fixture.actionHelper), input.session, input.fixture.actionIntent);
+  const actionProjection3 = gatedAction(action7(input.fixture.actionLabel, input.fixture.actionHref, input.fixture.actionTone, input.fixture.actionHelper), input.session, input.fixture.actionIntent);
   const nextAction = {
     nextActionProjectionId: `patient-request-next-action:${stableRecoveryHash([
       requestRef,
@@ -65047,7 +65691,7 @@ function recordCopy(route) {
   const actionRecovery = patientRecordOverview.recovery ? actionRecoveryProjection({
     reason: session.posture === "signed_out" ? "identity_hold" : "stale_session",
     primary: patientRecordOverview.recovery.action,
-    secondary: action6("Return home", "/", "supportive", "Go back to the patient portal home page."),
+    secondary: action7("Return home", "/", "supportive", "Go back to the patient portal home page."),
     summary: patientRecordOverview.recovery.message,
     selectedAnchorRef: patientRecordOverview.selectedAnchorRef
   }) : void 0;
@@ -65065,7 +65709,7 @@ function recordCopy(route) {
         title: patientRecordOverview.recovery.title,
         message: patientRecordOverview.recovery.message,
         action: patientRecordOverview.recovery.action,
-        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page."),
+        secondaryAction: action7("Return home", "/", "supportive", "Go back to the patient portal home page."),
         ...actionRecovery === void 0 ? {} : { actionRecovery }
       },
       ...actionRecovery === void 0 ? {} : { actionRecovery }
@@ -65120,7 +65764,7 @@ function patientRecordOverviewForRoute(route, session) {
   });
   const selectedSection = sections.find((section) => section.sectionKey === selectedSectionKey) ?? sections[0];
   const recovery = patientRecordRecoveryForSurface(surfaceState, session);
-  const dominantAction = recovery?.action ?? recordDominantActionForSection(selectedSection, results, artifacts, followUpActions) ?? action6("Return to records", "/records", "supportive", "Open the record overview.");
+  const dominantAction = recovery?.action ?? recordDominantActionForSection(selectedSection, results, artifacts, followUpActions) ?? action7("Return to records", "/records", "supportive", "Open the record overview.");
   const visibilityState = recordVisibilityStateForSurface(surfaceState);
   const releaseState = surfaceState === "delayed_release" ? "delayed_release" : "visible";
   return {
@@ -65242,7 +65886,7 @@ function patientRecordResultInsights(recordRef, recordVersionRef) {
       evidenceState: "artifact_verified",
       artifactParityState: "verified",
       relatedArtifactProjectionRef: "patient-record-artifact:result-blood-check",
-      primaryAction: action6("Ask about this", recordOriginActionHref("message_clinician", "result-blood-check", "results"), "primary", "Ask a question about this result.")
+      primaryAction: action7("Ask about this", recordOriginActionHref2("message_clinician", "result-blood-check", "results"), "primary", "Ask a question about this result.")
     }
   ];
 }
@@ -65282,7 +65926,7 @@ function patientRecordArtifacts(recordRef, recordVersionRef, recordOriginContinu
       evidenceState: "artifact_verified",
       recordOriginContinuationRef,
       recoveryContinuationTokenRef,
-      primaryAction: action6("View result summary", "/records/result-blood-check", "supportive", "Open the governed result summary.")
+      primaryAction: action7("View result summary", "/records/result-blood-check", "supportive", "Open the governed result summary.")
     }),
     patientRecordArtifact({
       recordItemId: "document-consultation-summary",
@@ -65299,7 +65943,7 @@ function patientRecordArtifacts(recordRef, recordVersionRef, recordOriginContinu
       evidenceState: "artifact_verified",
       recordOriginContinuationRef,
       recoveryContinuationTokenRef,
-      primaryAction: action6("View document", "/records/document-consultation-summary", "primary", "Open the governed document summary.")
+      primaryAction: action7("View document", "/records/document-consultation-summary", "primary", "Open the governed document summary.")
     }),
     patientRecordArtifact({
       recordItemId: "document-referral-letter",
@@ -65316,7 +65960,7 @@ function patientRecordArtifacts(recordRef, recordVersionRef, recordOriginContinu
       evidenceState: "source_only",
       recordOriginContinuationRef,
       recoveryContinuationTokenRef,
-      primaryAction: action6("View document", "/records/document-referral-letter", "supportive", "Open the source-only document summary.")
+      primaryAction: action7("View document", "/records/document-referral-letter", "supportive", "Open the source-only document summary.")
     })
   ];
 }
@@ -65376,7 +66020,7 @@ function patientRecordDelayedPlaceholders() {
       releaseState: "delayed_release",
       summarySafetyTier: "placeholder_only",
       evidenceState: "delayed_placeholder",
-      allowedAction: action6("Check later", "/records/result-imaging-delayed", "supportive", "Keep this item in the same record view.")
+      allowedAction: action7("Check later", "/records/result-imaging-delayed", "supportive", "Keep this item in the same record view.")
     },
     {
       placeholderProjectionId: "patient-record-placeholder:document-specialist-letter-delayed",
@@ -65392,7 +66036,7 @@ function patientRecordDelayedPlaceholders() {
       releaseState: "delayed_release",
       summarySafetyTier: "placeholder_only",
       evidenceState: "delayed_placeholder",
-      allowedAction: action6("Keep listed", "/records/document-specialist-letter-delayed", "supportive", "Keep this document listed while it is checked.")
+      allowedAction: action7("Keep listed", "/records/document-specialist-letter-delayed", "supportive", "Keep this document listed while it is checked.")
     }
   ];
 }
@@ -65412,7 +66056,7 @@ function patientRecordAccessPlaceholders(surfaceState) {
     releaseState: "withheld",
     summarySafetyTier: "recovery_only",
     evidenceState: stepUp ? "step_up_placeholder" : "recovery_only",
-    allowedAction: stepUp ? action6("Confirm it is you", "/auth/callback", "primary", "Confirm identity before viewing records.") : action6("Sign in to continue", "/auth/callback", "primary", "Sign in before viewing records.")
+    allowedAction: stepUp ? action7("Confirm it is you", "/auth/callback", "primary", "Confirm identity before viewing records.") : action7("Sign in to continue", "/auth/callback", "primary", "Sign in before viewing records.")
   }];
 }
 function patientRecordFollowUpActions(input) {
@@ -65522,7 +66166,7 @@ function patientRecordFollowUpActions(input) {
       visibilityState: spec.visibilityState,
       summarySafetyTier: spec.summarySafetyTier,
       navReturnContract,
-      action: action6(spec.actionLabel, recordOriginActionHref(spec.intent, spec.recordItemId, spec.sectionKey), spec.intent === "contact_repair" ? "caution" : spec.eligibilityState === "recovery_only" ? "supportive" : "primary", spec.actionHelper)
+      action: action7(spec.actionLabel, recordOriginActionHref2(spec.intent, spec.recordItemId, spec.sectionKey), spec.intent === "contact_repair" ? "caution" : spec.eligibilityState === "recovery_only" ? "supportive" : "primary", spec.actionHelper)
     };
   });
 }
@@ -65601,7 +66245,7 @@ function patientNavReturnContractForRecord(input) {
 }
 function patientRecordSections(input) {
   const visible = recordSurfaceAllowsPrivateSummary(input.surfaceState);
-  const blockedAction = input.surfaceState === "step_up_required" ? action6("Confirm it is you", "/auth/callback", "primary", "Confirm identity before viewing records.") : action6("Sign in to continue", "/auth/callback", "primary", "Sign in before viewing records.");
+  const blockedAction = input.surfaceState === "step_up_required" ? action7("Confirm it is you", "/auth/callback", "primary", "Confirm identity before viewing records.") : action7("Sign in to continue", "/auth/callback", "primary", "Sign in before viewing records.");
   const section = (key, title, summary, count, primaryAction, artifactParityState = "verified") => ({
     sectionRef: `patient-record-section:${key}`,
     sectionKey: key,
@@ -65621,10 +66265,10 @@ function patientRecordSections(input) {
   });
   const documentArtifacts = input.artifacts.filter((artifact) => artifact.recordItemId.startsWith("document-"));
   return [
-    section("results", "Results", visible ? "Reviewed results and results that are not ready yet stay together." : "Results are hidden until this check is complete.", input.results.length + input.delayedReleasePlaceholders.filter((item) => item.sectionKey === "results").length, action6("Ask about this", recordOriginActionHref("message_clinician", "result-blood-check", "results"), "primary", "Ask about a result from the record overview.")),
-    section("documents", "Documents", visible ? "Document summaries are shown before any source file action." : "Documents are hidden until this check is complete.", documentArtifacts.length + input.delayedReleasePlaceholders.filter((item) => item.sectionKey === "documents").length, documentArtifacts[0]?.primaryAction ?? action6("View document", "/records/document-consultation-summary", "primary", "Open a governed document summary."), documentArtifacts.some((artifact) => artifact.summaryParityState === "source_only") ? "source_only" : "verified"),
-    section("medicines", "Medicines", visible ? "Medicine information is summarized with safety notes." : "Medicine summaries are hidden until this check is complete.", input.medications.length, action6("Review medicines", "/records/medicine-current-summary", "supportive", "Open the medicine summary."), "source_only"),
-    section("follow_up", "Follow-up", visible ? "Follow-up actions keep a return link back to this record." : "Follow-up actions need confirmation first.", input.followUpActions.length, input.followUpActions[0]?.action ?? action6("Ask about this", "/requests/trk_records_followup", "primary", "Ask a question about this record."), "verified")
+    section("results", "Results", visible ? "Reviewed results and results that are not ready yet stay together." : "Results are hidden until this check is complete.", input.results.length + input.delayedReleasePlaceholders.filter((item) => item.sectionKey === "results").length, action7("Ask about this", recordOriginActionHref2("message_clinician", "result-blood-check", "results"), "primary", "Ask about a result from the record overview.")),
+    section("documents", "Documents", visible ? "Document summaries are shown before any source file action." : "Documents are hidden until this check is complete.", documentArtifacts.length + input.delayedReleasePlaceholders.filter((item) => item.sectionKey === "documents").length, documentArtifacts[0]?.primaryAction ?? action7("View document", "/records/document-consultation-summary", "primary", "Open a governed document summary."), documentArtifacts.some((artifact) => artifact.summaryParityState === "source_only") ? "source_only" : "verified"),
+    section("medicines", "Medicines", visible ? "Medicine information is summarized with safety notes." : "Medicine summaries are hidden until this check is complete.", input.medications.length, action7("Review medicines", "/records/medicine-current-summary", "supportive", "Open the medicine summary."), "source_only"),
+    section("follow_up", "Follow-up", visible ? "Follow-up actions keep a return link back to this record." : "Follow-up actions need confirmation first.", input.followUpActions.length, input.followUpActions[0]?.action ?? action7("Ask about this", "/requests/trk_records_followup", "primary", "Ask a question about this record."), "verified")
   ];
 }
 function recordSectionStatusLabel(key, input) {
@@ -65680,7 +66324,7 @@ function patientRecordRecoveryForSurface(surfaceState, session) {
     message: stepUp ? "The record overview keeps your place, but result, document, and medicine summaries are hidden until confirmation is complete." : session.posture === "recovery_only" || session.posture === "restricted" ? "This record page needs a safe check before private summaries or document actions can be shown." : "Sign in before viewing record summaries, documents, results, or medicines.",
     reasonCodes: stepUp ? ["record_step_up_required"] : ["record_visibility_recovery_required"],
     freezeMutations: true,
-    action: stepUp ? action6("Confirm it is you", "/auth/callback", "primary", "Confirm identity before viewing records.") : action6("Sign in to continue", "/auth/callback", "primary", "Sign in before viewing records.")
+    action: stepUp ? action7("Confirm it is you", "/auth/callback", "primary", "Confirm identity before viewing records.") : action7("Sign in to continue", "/auth/callback", "primary", "Sign in before viewing records.")
   };
 }
 function recordEvidenceLabel(state) {
@@ -65899,7 +66543,7 @@ function networkOfferCopy(route) {
     pageTitle: mutationOpen ? "Choose a network appointment" : settledCopy?.pageTitle ?? "Times need a check",
     eyebrow: "Network appointment offer",
     summary: mutationOpen ? "Your practice could not offer the ideal slot, so these network appointment options are available for you to choose from." : settledCopy?.summary ?? "The previous offer is still shown, but the practice needs to check it before anything changes.",
-    primaryAction: mutationOpen ? action6("Choose an option", `${route.path}#network-offer-options`, "primary", "Select an option before accepting it.") : settledCopy ? action6("Review offer status", `${route.path}#network-offer-heading`, "supportive", settledCopy.actionHelper) : actionWithGate("Get help with this offer", "/recovery", "supportive", "Get help before taking another action.", "read_only"),
+    primaryAction: mutationOpen ? action7("Choose an option", `${route.path}#network-offer-options`, "primary", "Select an option before accepting it.") : settledCopy ? action7("Review offer status", `${route.path}#network-offer-heading`, "supportive", settledCopy.actionHelper) : actionWithGate("Get help with this offer", "/recovery", "supportive", "Get help before taking another action.", "read_only"),
     session,
     identityState: "signedIn",
     networkOffer,
@@ -66419,13 +67063,13 @@ function pharmacyProviderCards(pharmacyCaseId, selectedCardId, actionable) {
 function pharmacyProviderCard(input) {
   return {
     ...input,
-    primaryAction: action6(input.selected ? `${input.displayName} selected` : `Choose ${input.displayName}`, "#pharmacy-consent", input.requiresAcknowledgement ? "caution" : "primary", input.requiresAcknowledgement ? "Review and acknowledge the timing warning before consent." : "Select this pharmacy before reviewing consent.")
+    primaryAction: action7(input.selected ? `${input.displayName} selected` : `Choose ${input.displayName}`, "#pharmacy-consent", input.requiresAcknowledgement ? "caution" : "primary", input.requiresAcknowledgement ? "Review and acknowledge the timing warning before consent." : "Select this pharmacy before reviewing consent.")
   };
 }
 function pharmacyConsentCheckpointProjection(pharmacyCaseId, scenario2, selectedProvider) {
   const selectedProviderName = selectedProvider?.displayName ?? null;
   const baseHref = `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/instructions`;
-  const primary = action6(selectedProvider ? "Continue to consent" : "Choose a pharmacy first", baseHref, selectedProvider ? "primary" : "supportive", selectedProvider ? "Review the referral consent summary." : "Select one pharmacy from the list.");
+  const primary = action7(selectedProvider ? "Continue to consent" : "Choose a pharmacy first", baseHref, selectedProvider ? "primary" : "supportive", selectedProvider ? "Review the referral consent summary." : "Select one pharmacy from the list.");
   switch (scenario2) {
     case "consent_expired":
       return consentCheckpoint({
@@ -66437,7 +67081,7 @@ function pharmacyConsentCheckpointProjection(pharmacyCaseId, scenario2, selected
         selectedProviderName,
         requiresWarningAcknowledgement: false,
         acknowledgementLabel: null,
-        primaryAction: action6("Renew consent", baseHref, "primary", "Review consent before the referral continues.")
+        primaryAction: action7("Renew consent", baseHref, "primary", "Review consent before the referral continues.")
       });
     case "consent_revoked":
       return consentCheckpoint({
@@ -66449,7 +67093,7 @@ function pharmacyConsentCheckpointProjection(pharmacyCaseId, scenario2, selected
         selectedProviderName,
         requiresWarningAcknowledgement: false,
         acknowledgementLabel: null,
-        primaryAction: action6("Review next step", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "See the latest status.")
+        primaryAction: action7("Review next step", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "See the latest status.")
       });
     case "recovery":
     case "stale_choice":
@@ -66463,7 +67107,7 @@ function pharmacyConsentCheckpointProjection(pharmacyCaseId, scenario2, selected
         selectedProviderName,
         requiresWarningAcknowledgement: false,
         acknowledgementLabel: null,
-        primaryAction: action6("Refresh pharmacy choices", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`, "supportive", "Reload the latest pharmacy choices.")
+        primaryAction: action7("Refresh pharmacy choices", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`, "supportive", "Reload the latest pharmacy choices.")
       });
     case "selected":
     case "dispatch_pending":
@@ -66485,7 +67129,7 @@ function pharmacyConsentCheckpointProjection(pharmacyCaseId, scenario2, selected
         selectedProviderName,
         requiresWarningAcknowledgement: false,
         acknowledgementLabel: null,
-        primaryAction: action6("View instructions", baseHref, "primary", "See what happens next.")
+        primaryAction: action7("View instructions", baseHref, "primary", "See what happens next.")
       });
     case "choice":
       return consentCheckpoint({
@@ -66604,15 +67248,15 @@ function pharmacyDispatchNextStep(statusState) {
 function pharmacyDispatchPrimaryAction(pharmacyCaseId, statusState) {
   switch (statusState) {
     case "not_started":
-      return action6("Review consent", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/instructions`, "primary", "Continue before the pharmacy request is sent.");
+      return action7("Review consent", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/instructions`, "primary", "Continue before the pharmacy request is sent.");
     case "confirming_referral":
-      return action6("Check again", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "Refresh the current pharmacy status.");
+      return action7("Check again", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "Refresh the current pharmacy status.");
     case "referred":
-      return action6("View instructions", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/instructions`, "primary", "Review what to do next.");
+      return action7("View instructions", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/instructions`, "primary", "Review what to do next.");
     case "reviewing_next_steps":
-      return action6("Check status", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "Return to this same pharmacy status page.");
+      return action7("Check status", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "Return to this same pharmacy status page.");
     case "recovery_required":
-      return action6("Refresh pharmacy status", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "Reload the latest available status.");
+      return action7("Refresh pharmacy status", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "Reload the latest available status.");
   }
 }
 function pharmacyStatusSurfaceProjection(pharmacyCaseId, scenario2, selectedProvider) {
@@ -66927,32 +67571,32 @@ function pharmacyStatusNextStep(pharmacyCaseId, truthState, selectedProvider) {
   const providerName = selectedProvider?.displayName ?? "the chosen pharmacy";
   switch (truthState) {
     case "choice_or_consent_needed":
-      return nextStep("Confirm pharmacy choice", "Review pharmacy consent before the referral can continue.", "No referral has been sent yet.", "Use urgent care if symptoms worsen.", action6("Review consent", instructionsHref, "primary", "Review pharmacy consent on this page."));
+      return nextStep("Confirm pharmacy choice", "Review pharmacy consent before the referral can continue.", "No referral has been sent yet.", "Use urgent care if symptoms worsen.", action7("Review consent", instructionsHref, "primary", "Review pharmacy consent on this page."));
     case "dispatch_pending":
-      return nextStep("Wait for confirmation", `We are checking that ${providerName} can receive the request.`, "Check again later today.", "Use urgent care if symptoms worsen.", action6("Check again", statusHref, "supportive", "Refresh the current pharmacy status."));
+      return nextStep("Wait for confirmation", `We are checking that ${providerName} can receive the request.`, "Check again later today.", "Use urgent care if symptoms worsen.", action7("Check again", statusHref, "supportive", "Refresh the current pharmacy status."));
     case "dispatch_confirmation_missing":
-      return nextStep("We are checking this", "The practice needs clearer confirmation before giving final pharmacy instructions.", "We will keep this status page updated.", "Use urgent care if symptoms worsen.", action6("Check again", statusHref, "supportive", "Refresh the current pharmacy status."));
+      return nextStep("We are checking this", "The practice needs clearer confirmation before giving final pharmacy instructions.", "We will keep this status page updated.", "Use urgent care if symptoms worsen.", action7("Check again", statusHref, "supportive", "Refresh the current pharmacy status."));
     case "dispatch_disputed":
-      return nextStep("Wait for practice review", "The practice is checking the referral before asking you to act.", "You do not need to contact the pharmacy yet.", "Use urgent care if symptoms worsen.", action6("Check status", statusHref, "supportive", "Return to this pharmacy status page."));
+      return nextStep("Wait for practice review", "The practice is checking the referral before asking you to act.", "You do not need to contact the pharmacy yet.", "Use urgent care if symptoms worsen.", action7("Check status", statusHref, "supportive", "Return to this pharmacy status page."));
     case "referral_received":
     case "outcome_waiting":
-      return nextStep("Follow pharmacy instructions", `${providerName} may call you or ask you to attend in person.`, "Contact the pharmacy if instructed by the practice or pharmacy.", "Use urgent care if symptoms worsen.", action6("View instructions", instructionsHref, "primary", "Review pharmacy instructions."));
+      return nextStep("Follow pharmacy instructions", `${providerName} may call you or ask you to attend in person.`, "Contact the pharmacy if instructed by the practice or pharmacy.", "Use urgent care if symptoms worsen.", action7("View instructions", instructionsHref, "primary", "Review pharmacy instructions."));
     case "outcome_review":
-      return nextStep("Wait for practice update", "The practice is reviewing the pharmacy update before showing the final next step.", "Check this page for the latest update.", "Use urgent care if symptoms worsen.", action6("Check status", statusHref, "supportive", "Refresh the current pharmacy status."));
+      return nextStep("Wait for practice update", "The practice is reviewing the pharmacy update before showing the final next step.", "Check this page for the latest update.", "Use urgent care if symptoms worsen.", action7("Check status", statusHref, "supportive", "Refresh the current pharmacy status."));
     case "resolved":
-      return nextStep("No pharmacy action needed here", "The pharmacy outcome is recorded. Follow any advice you were given.", "No further pharmacy status action is needed.", "Start a new request or use urgent care if symptoms worsen.", action6("Return home", "/", "supportive", "Go back to the patient portal home page."));
+      return nextStep("No pharmacy action needed here", "The pharmacy outcome is recorded. Follow any advice you were given.", "No further pharmacy status action is needed.", "Start a new request or use urgent care if symptoms worsen.", action7("Return home", "/", "supportive", "Go back to the patient portal home page."));
     case "routine_return":
-      return nextStep("Wait for practice review", "The pharmacy could not complete the path, so the practice is deciding the next step.", "The practice will update this request.", "Use urgent care if symptoms worsen.", action6("Check status", statusHref, "supportive", "Refresh the pharmacy return status."));
+      return nextStep("Wait for practice review", "The pharmacy could not complete the path, so the practice is deciding the next step.", "The practice will update this request.", "Use urgent care if symptoms worsen.", action7("Check status", statusHref, "supportive", "Refresh the pharmacy return status."));
     case "no_contact_return":
     case "contact_repair":
-      return nextStep("Check contact details", "The pharmacy referral is paused until your contact details are checked.", "Update contact details before pharmacy updates continue.", "Use urgent care if symptoms worsen.", action6("Update contact details", pharmacyContactRepairHref, "primary", "Send current contact details before pharmacy updates continue."));
+      return nextStep("Check contact details", "The pharmacy referral is paused until your contact details are checked.", "Update contact details before pharmacy updates continue.", "Use urgent care if symptoms worsen.", action7("Update contact details", pharmacyContactRepairHref, "primary", "Send current contact details before pharmacy updates continue."));
     case "urgent_return":
-      return nextStep("Follow urgent advice", "The practice needs to review this urgently. Do not wait on this page if symptoms are getting worse.", "Seek urgent care if needed now.", "Use emergency or urgent care options if symptoms worsen.", action6("Get urgent advice", "/start", "caution", "Open the urgent safety guidance."));
+      return nextStep("Follow urgent advice", "The practice needs to review this urgently. Do not wait on this page if symptoms are getting worse.", "Seek urgent care if needed now.", "Use emergency or urgent care options if symptoms worsen.", action7("Get urgent advice", "/start", "caution", "Open the urgent safety guidance."));
     case "stale_continuity":
     case "recovery_only":
-      return nextStep("Refresh pharmacy status", "Your previous pharmacy choice stays visible while we check the latest status.", "We will show the next step after this status refreshes.", "Use urgent care if symptoms worsen.", action6("Refresh pharmacy status", statusHref, "supportive", "Reload the latest pharmacy status."));
+      return nextStep("Refresh pharmacy status", "Your previous pharmacy choice stays visible while we check the latest status.", "We will show the next step after this status refreshes.", "Use urgent care if symptoms worsen.", action7("Refresh pharmacy status", statusHref, "supportive", "Reload the latest pharmacy status."));
     case "revoked_consent":
-      return nextStep("Wait for consent review", "The practice is checking what can be changed after consent was withdrawn.", "No further pharmacy action is available right now.", "Use urgent care if symptoms worsen.", action6("Check status", statusHref, "supportive", "Check whether the consent review has changed."));
+      return nextStep("Wait for consent review", "The practice is checking what can be changed after consent was withdrawn.", "No further pharmacy action is available right now.", "Use urgent care if symptoms worsen.", action7("Check status", statusHref, "supportive", "Check whether the consent review has changed."));
   }
 }
 function nextStep(title, body, timingLabel, symptomSafetyLabel, primaryAction) {
@@ -66970,35 +67614,35 @@ function pharmacyStatusRecoveryProjection(pharmacyCaseId, scenario2, truthState)
   const pharmacyContactRepairHref = "/contact/repair/repair_pharmacy_update#collect";
   switch (scenario2) {
     case "consent_expired":
-      return statusRecovery("expired_consent", "Consent needs renewing", "The referral cannot continue until consent is current again.", ["Consent is no longer current"], action6("Renew consent", instructionsHref, "primary", "Review consent for this pharmacy referral."));
+      return statusRecovery("expired_consent", "Consent needs renewing", "The referral cannot continue until consent is current again.", ["Consent is no longer current"], action7("Renew consent", instructionsHref, "primary", "Review consent for this pharmacy referral."));
     case "consent_revoked":
-      return statusRecovery("revoked_consent", "Consent change under review", "The referral is paused while the practice reviews the consent change.", ["Consent was withdrawn"], action6("Check status", statusHref, "supportive", "Check whether the consent review has changed."));
+      return statusRecovery("revoked_consent", "Consent change under review", "The referral is paused while the practice reviews the consent change.", ["Consent was withdrawn"], action7("Check status", statusHref, "supportive", "Check whether the consent review has changed."));
     case "proof_missing":
-      return statusRecovery("dispatch_confirmation_missing", "Referral confirmation still missing", "We are checking the referral before giving final pharmacy instructions.", ["Confirmation is not settled yet"], action6("Check again", statusHref, "supportive", "Refresh the current pharmacy status."));
+      return statusRecovery("dispatch_confirmation_missing", "Referral confirmation still missing", "We are checking the referral before giving final pharmacy instructions.", ["Confirmation is not settled yet"], action7("Check again", statusHref, "supportive", "Refresh the current pharmacy status."));
     case "dispatch_disputed":
-      return statusRecovery("dispatch_disputed", "Referral confirmation needs review", "The latest confirmation does not match this request closely enough.", ["Practice review is needed before reassurance"], action6("Check status", statusHref, "supportive", "Refresh this pharmacy status."));
+      return statusRecovery("dispatch_disputed", "Referral confirmation needs review", "The latest confirmation does not match this request closely enough.", ["Practice review is needed before reassurance"], action7("Check status", statusHref, "supportive", "Refresh this pharmacy status."));
     case "outcome_review":
-      return statusRecovery("outcome_review", "Practice reviewing pharmacy update", "The final outcome is shown after the review is complete.", ["Pharmacy update is under review"], action6("Check status", statusHref, "supportive", "Refresh this pharmacy status."));
+      return statusRecovery("outcome_review", "Practice reviewing pharmacy update", "The final outcome is shown after the review is complete.", ["Pharmacy update is under review"], action7("Check status", statusHref, "supportive", "Refresh this pharmacy status."));
     case "routine_bounce_back":
-      return statusRecovery("routine_return", "Returned to the practice", "The pharmacy could not complete this path, so the practice is reviewing it again.", ["Practice review is open"], action6("Check status", statusHref, "supportive", "Refresh the pharmacy return status."));
+      return statusRecovery("routine_return", "Returned to the practice", "The pharmacy could not complete this path, so the practice is reviewing it again.", ["Practice review is open"], action7("Check status", statusHref, "supportive", "Refresh the pharmacy return status."));
     case "no_contact_return":
-      return statusRecovery("no_contact_return", "Contact details need checking", "The pharmacy could not continue because contact did not work.", ["Contact details need checking"], action6("Update contact details", pharmacyContactRepairHref, "primary", "Send current contact details before pharmacy updates continue."));
+      return statusRecovery("no_contact_return", "Contact details need checking", "The pharmacy could not continue because contact did not work.", ["Contact details need checking"], action7("Update contact details", pharmacyContactRepairHref, "primary", "Send current contact details before pharmacy updates continue."));
     case "urgent_return":
-      return statusRecovery("urgent_return", "Urgent practice review", "The pharmacy returned this for urgent review. Do not wait if symptoms are worsening.", ["Urgent review has priority"], action6("Get urgent advice", "/start", "caution", "Open urgent safety guidance."));
+      return statusRecovery("urgent_return", "Urgent practice review", "The pharmacy returned this for urgent review. Do not wait if symptoms are worsening.", ["Urgent review has priority"], action7("Get urgent advice", "/start", "caution", "Open urgent safety guidance."));
     case "reachability_blocked":
-      return statusRecovery("contact_repair", "We need current contact details", "The pharmacy referral is paused until contact details are checked.", ["Contact details need checking"], action6("Update contact details", pharmacyContactRepairHref, "primary", "Send current contact details before pharmacy updates continue."));
+      return statusRecovery("contact_repair", "We need current contact details", "The pharmacy referral is paused until contact details are checked.", ["Contact details need checking"], action7("Update contact details", pharmacyContactRepairHref, "primary", "Send current contact details before pharmacy updates continue."));
     case "stale_choice":
-      return statusRecovery("stale_choice", "Pharmacy choice needs a refresh", "The previous pharmacy choice is still shown while the practice checks the latest pharmacy details.", ["Pharmacy choice needs refreshing"], action6("Refresh pharmacy choices", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`, "supportive", "Reload pharmacy choices."));
+      return statusRecovery("stale_choice", "Pharmacy choice needs a refresh", "The previous pharmacy choice is still shown while the practice checks the latest pharmacy details.", ["Pharmacy choice needs refreshing"], action7("Refresh pharmacy choices", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`, "supportive", "Reload pharmacy choices."));
     case "continuity_stale":
-      return statusRecovery("continuity_blocked", "Pharmacy status needs a check", "The latest status cannot be shown as settled until the page is refreshed.", ["Status check is needed"], action6("Refresh pharmacy status", statusHref, "supportive", "Reload the latest available status."));
+      return statusRecovery("continuity_blocked", "Pharmacy status needs a check", "The latest status cannot be shown as settled until the page is refreshed.", ["Status check is needed"], action7("Refresh pharmacy status", statusHref, "supportive", "Reload the latest available status."));
     case "recovery":
-      return statusRecovery("recovery_only", "Pharmacy request needs a check", "The latest pharmacy details need checking before anything changes.", ["Status could not be confirmed"], action6("Refresh pharmacy status", statusHref, "supportive", "Reload the latest pharmacy status."));
+      return statusRecovery("recovery_only", "Pharmacy request needs a check", "The latest pharmacy details need checking before anything changes.", ["Status could not be confirmed"], action7("Refresh pharmacy status", statusHref, "supportive", "Reload the latest pharmacy status."));
     case "choice":
     case "selected":
     case "dispatch_pending":
     case "referred":
     case "resolved":
-      return truthState === "choice_or_consent_needed" ? statusRecovery("none", "Pharmacy action needed", "Review the pharmacy choice and consent before referral continues.", ["Choice and consent must be current"], action6("Review consent", instructionsHref, "primary", "Review pharmacy consent.")) : null;
+      return truthState === "choice_or_consent_needed" ? statusRecovery("none", "Pharmacy action needed", "Review the pharmacy choice and consent before referral continues.", ["Choice and consent must be current"], action7("Review consent", instructionsHref, "primary", "Review pharmacy consent.")) : null;
   }
 }
 function statusRecovery(recoveryKind, title, message, reasonLabels, actionProjection3) {
@@ -67038,7 +67682,7 @@ function pharmacyStatusReadOnlyProvenanceLabel(scenario2) {
 function pharmacyRecoveryProjection(pharmacyCaseId, scenario2, selectedProvider) {
   const common = {
     preserveProviderCard: selectedProvider !== null,
-    action: action6("Refresh pharmacy choices", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`, "supportive", "Load the latest pharmacy choices in this page.")
+    action: action7("Refresh pharmacy choices", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/choose`, "supportive", "Load the latest pharmacy choices in this page.")
   };
   switch (scenario2) {
     case "stale_choice":
@@ -67057,7 +67701,7 @@ function pharmacyRecoveryProjection(pharmacyCaseId, scenario2, selectedProvider)
         message: "Your earlier pharmacy consent expired before the request could continue.",
         reasons: ["Consent is no longer current"],
         readOnlyProvenanceLabel: "Chosen pharmacy preserved",
-        action: action6("Renew consent", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/instructions`, "primary", "Review consent for this pharmacy referral."),
+        action: action7("Renew consent", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/instructions`, "primary", "Review consent for this pharmacy referral."),
         preserveProviderCard: true
       });
     case "consent_revoked":
@@ -67067,7 +67711,7 @@ function pharmacyRecoveryProjection(pharmacyCaseId, scenario2, selectedProvider)
         message: "This pharmacy referral is paused while the practice reviews the consent change.",
         reasons: ["Referral consent was withdrawn"],
         readOnlyProvenanceLabel: "Chosen pharmacy preserved",
-        action: action6("Check status", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "See the latest pharmacy status."),
+        action: action7("Check status", `/pharmacy/${encodeURIComponent(pharmacyCaseId)}/status`, "supportive", "See the latest pharmacy status."),
         preserveProviderCard: true
       });
     case "recovery":
@@ -67179,7 +67823,7 @@ function appointmentManageCopy(route) {
     pageTitle,
     eyebrow: "Appointment management",
     summary,
-    primaryAction: route.key === "appointmentDetail" && writable ? action6("Manage appointment", `/appointments/${encodeURIComponent(appointmentManage.appointmentId)}/manage`, "primary", "Open the appointment management actions.") : route.key === "appointmentCancel" ? appointmentManage.manageActions.find((item) => item.scope === "appointment_cancel" && item.availability === "live")?.action ?? appointmentManage.recoveryAction : route.key === "appointmentReschedule" ? appointmentManage.manageActions.find((item) => item.scope === "appointment_reschedule" && item.availability === "live")?.action ?? appointmentManage.recoveryAction : appointmentManage.manageActions.find((item) => item.scope === "appointment_reschedule" && item.availability === "live")?.action ?? appointmentManage.manageActions.find((item) => item.availability === "live" && !item.destructive)?.action ?? appointmentManage.recoveryAction,
+    primaryAction: route.key === "appointmentDetail" && writable ? action7("Manage appointment", `/appointments/${encodeURIComponent(appointmentManage.appointmentId)}/manage`, "primary", "Open the appointment management actions.") : route.key === "appointmentCancel" ? appointmentManage.manageActions.find((item) => item.scope === "appointment_cancel" && item.availability === "live")?.action ?? appointmentManage.recoveryAction : route.key === "appointmentReschedule" ? appointmentManage.manageActions.find((item) => item.scope === "appointment_reschedule" && item.availability === "live")?.action ?? appointmentManage.recoveryAction : appointmentManage.manageActions.find((item) => item.scope === "appointment_reschedule" && item.availability === "live")?.action ?? appointmentManage.manageActions.find((item) => item.availability === "live" && !item.destructive)?.action ?? appointmentManage.recoveryAction,
     session,
     identityState: "signedIn",
     appointmentManage,
@@ -67379,7 +68023,7 @@ function nhsAppSsoAuthCallbackCopy(route) {
       return authCallbackStateCopy({
         pageTitle: "Confirming your details",
         summary: "Your NHS login check is complete. We are preparing the right page for this journey.",
-        primaryAction: action6("Continue", "/requests", "primary", "Open your patient portal."),
+        primaryAction: action7("Continue", "/requests", "primary", "Open your patient portal."),
         sectionHeading: "Keeping your place",
         sectionBody: "We keep the same journey context while the secure sign-in is prepared."
       }, "signedIn");
@@ -67387,7 +68031,7 @@ function nhsAppSsoAuthCallbackCopy(route) {
       return authCallbackStateCopy({
         pageTitle: "We could not sign you in here",
         summary: "This sign-in could not be completed safely in the embedded journey.",
-        primaryAction: action6("Try again", "/start?from=nhsApp", "primary", "Start the NHS App sign-in again."),
+        primaryAction: action7("Try again", "/start?from=nhsApp", "primary", "Start the NHS App sign-in again."),
         sectionHeading: "What you can do",
         sectionBody: "Try again from the NHS App. If the problem continues, use Help."
       }, "reauthRequired");
@@ -67395,7 +68039,7 @@ function nhsAppSsoAuthCallbackCopy(route) {
       return authCallbackStateCopy({
         pageTitle: "Please go back to the NHS App and try again",
         summary: "This embedded view no longer matches the current journey.",
-        primaryAction: action6("Get support", "/recovery", "primary", "Open a safe support page."),
+        primaryAction: action7("Get support", "/recovery", "primary", "Open a safe support page."),
         sectionHeading: "Why this is safe",
         sectionBody: "Private details stay hidden until the NHS App opens the current journey again."
       }, "reauthRequired");
@@ -67403,7 +68047,7 @@ function nhsAppSsoAuthCallbackCopy(route) {
       return authCallbackStateCopy({
         pageTitle: "You chose not to use your NHS login",
         summary: "We have not signed you in or shown private details.",
-        primaryAction: action6("Return to the start", "/start", "primary", "Go back to the request start page."),
+        primaryAction: action7("Return to the start", "/start", "primary", "Go back to the request start page."),
         sectionHeading: "Other options",
         sectionBody: "You can start again, choose recovery, or return to the NHS App."
       }, "anonymous");
@@ -67411,7 +68055,7 @@ function nhsAppSsoAuthCallbackCopy(route) {
       return authCallbackStateCopy({
         pageTitle: "Your sign-in has ended",
         summary: "We ended the previous sign-in before continuing.",
-        primaryAction: action6("Start again", "/start?from=nhsApp", "primary", "Start a fresh NHS App journey."),
+        primaryAction: action7("Start again", "/start?from=nhsApp", "primary", "Start a fresh NHS App journey."),
         sectionHeading: "What stays protected",
         sectionBody: "The previous sign-in is not reused when account details do not match."
       }, "reauthRequired");
@@ -67419,7 +68063,7 @@ function nhsAppSsoAuthCallbackCopy(route) {
       return authCallbackStateCopy({
         pageTitle: "Completing sign in",
         summary: "We are checking your sign-in before showing private details.",
-        primaryAction: action6("Return home", "/", "supportive", "Continue once sign in has completed."),
+        primaryAction: action7("Return home", "/", "supportive", "Continue once sign in has completed."),
         sectionHeading: "Sign-in check",
         sectionBody: "The app is waiting for the sign-in result and will show help if support is needed."
       });
@@ -67427,10 +68071,10 @@ function nhsAppSsoAuthCallbackCopy(route) {
 }
 function nhsAppSsoAuthorizeAction(entryGrantId) {
   if (!entryGrantId) {
-    return action6("Return to the NHS App", "/auth/callback?nhsAppSso=go_back_to_nhs_app", "primary", "Open this journey from the NHS App before NHS login starts.");
+    return action7("Return to the NHS App", "/auth/callback?nhsAppSso=go_back_to_nhs_app", "primary", "Open this journey from the NHS App before NHS login starts.");
   }
   const params = new URLSearchParams({ entryGrantId });
-  return action6("Continue to NHS login", `/v1/nhs-app/sso/authorize?${params.toString()}`, "primary", "Continue the NHS App sign-in handoff.");
+  return action7("Continue to NHS login", `/v1/nhs-app/sso/authorize?${params.toString()}`, "primary", "Continue the NHS App sign-in handoff.");
 }
 function authCallbackStateCopy(input, identityState = "linking") {
   return {
@@ -67457,7 +68101,7 @@ function accountSignOutCopy() {
     pageTitle: "Signed out",
     eyebrow: "Account",
     summary: "You are signed out of this patient portal.",
-    primaryAction: action6("Sign in again", "/auth/callback", "primary", "Start a fresh sign-in check."),
+    primaryAction: action7("Sign in again", "/auth/callback", "primary", "Start a fresh sign-in check."),
     session,
     identityState: "anonymous",
     sections: [
@@ -67786,7 +68430,7 @@ function secureLinkCopyForRoute(route) {
     pageTitle: "Checking this secure link",
     eyebrow: "Secure link",
     summary: "The link is being checked before any saved information is shown.",
-    primaryAction: action6("Checking link", "/secure-link/checking", "supportive", "The secure link is still being checked."),
+    primaryAction: action7("Checking link", "/secure-link/checking", "supportive", "The secure link is still being checked."),
     session: checkingSession,
     identityState: "linking",
     sections: [
@@ -67802,7 +68446,7 @@ function secureLinkCopyForRoute(route) {
   };
 }
 function secureLinkRecoveryCopy(input) {
-  const primary = action6(input.primaryLabel, input.primaryHref, "primary", "Continue with the safest available next step.");
+  const primary = action7(input.primaryLabel, input.primaryHref, "primary", "Continue with the safest available next step.");
   const actionRecovery = actionRecoveryProjection({
     reason: input.reason,
     primary,
@@ -67851,7 +68495,7 @@ function resumeSuccessCopy(stepKey, flags) {
     pageTitle: intakeContent.recovery.states.unknown_or_expired.heading,
     eyebrow: "Saved draft",
     summary: "Your saved request is ready to continue in this patient shell.",
-    primaryAction: action6("Continue request", continueHref, "primary", "Continue from the saved step."),
+    primaryAction: action7("Continue request", continueHref, "primary", "Continue from the saved step."),
     sections: [],
     intakeFlow: intakeFlowForStep(stepKey, flags),
     intakeRequestTypeStep: requestTypeStep(flags),
@@ -67891,7 +68535,7 @@ function hrefForIntakeStep(stepKey) {
   }
 }
 function draftRecoveryCopy(input) {
-  const primary = action6(input.primaryLabel, input.primaryHref, "primary", "Continue safely after the check.");
+  const primary = action7(input.primaryLabel, input.primaryHref, "primary", "Continue safely after the check.");
   const actionRecovery = actionRecoveryProjection({
     reason: patientActionRecoveryReasonForDraft(input),
     primary,
@@ -67909,7 +68553,7 @@ function draftRecoveryCopy(input) {
       title: input.validationState === "blocked" ? input.pageTitle : "We need to recheck this saved request",
       message: input.summary,
       action: primary,
-      secondaryAction: action6(intakeContent.recovery.states.expired_draft.secondaryActionLabel, "/start", "supportive", "Begin a new request."),
+      secondaryAction: action7(intakeContent.recovery.states.expired_draft.secondaryActionLabel, "/start", "supportive", "Begin a new request."),
       actionRecovery,
       draftRecovery: {
         resumeMode: input.resumeMode,
@@ -67962,8 +68606,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Signed out",
         summary: "You can start a request without signing in.",
-        primaryAction: action6("Sign in", "/auth/callback", "primary", "Start a secure sign-in check."),
-        secondaryAction: action6("Start without signing in", "/start", "supportive", "Begin a request without signing in."),
+        primaryAction: action7("Sign in", "/auth/callback", "primary", "Start a secure sign-in check."),
+        secondaryAction: action7("Start without signing in", "/start", "supportive", "Begin a request without signing in."),
         capabilities: ["Anonymous intake is available", "Account actions need sign in"],
         reasonCodes: ["signed-out"]
       };
@@ -67971,7 +68615,7 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Signing in",
         summary: "We are preparing your secure sign-in.",
-        primaryAction: action6("Return home", "/", "supportive", "Go back once sign in completes."),
+        primaryAction: action7("Return home", "/", "supportive", "Go back once sign in completes."),
         capabilities: ["Account actions wait until sign in completes"],
         reasonCodes: ["signing-in"]
       };
@@ -67979,8 +68623,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Signed in",
         summary: "Finish the account check before private account details are shown.",
-        primaryAction: action6("Confirm account", "/account/recovery/claim-pending", "primary", "Finish the account check before using request actions."),
-        secondaryAction: action6("Check a request", "/status/trk_statuspreview", "supportive", "Open a status check."),
+        primaryAction: action7("Confirm account", "/account/recovery/claim-pending", "primary", "Finish the account check before using request actions."),
+        secondaryAction: action7("Check a request", "/status/trk_statuspreview", "supportive", "Open a status check."),
         capabilities: ["Status checks are available", "New signed-in requests wait for the account check"],
         reasonCodes: ["not-linked"]
       };
@@ -67988,8 +68632,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Signed in",
         summary: "You can start or continue your requests.",
-        primaryAction: action6("Start a request", "/request/new", "primary", "Begin a new request with your signed-in account."),
-        secondaryAction: action6("Sign out", "/account/sign-out", "supportive", "End this patient portal sign-in."),
+        primaryAction: action7("Start a request", "/request/new", "primary", "Begin a new request with your signed-in account."),
+        secondaryAction: action7("Sign out", "/account/sign-out", "supportive", "End this patient portal sign-in."),
         capabilities: ["Start request available", "Saved request continuation available", "Status checks available"],
         reasonCodes: []
       };
@@ -67997,8 +68641,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Needs setup",
         summary: "A saved request can be linked after this account check is complete.",
-        primaryAction: action6("Continue check", "/account/recovery/claim-pending", "primary", "Continue the ownership check before editing."),
-        secondaryAction: action6("Check a request", "/status/trk_statuspreview", "supportive", "Open the latest status without changing anything."),
+        primaryAction: action7("Continue check", "/account/recovery/claim-pending", "primary", "Continue the ownership check before editing."),
+        secondaryAction: action7("Check a request", "/status/trk_statuspreview", "supportive", "Open the latest status without changing anything."),
         capabilities: ["Status checks stay available", "Editing waits for ownership confirmation"],
         reasonCodes: ["claim-pending"]
       };
@@ -68006,8 +68650,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Check needed",
         summary: "Some actions need another identity check.",
-        primaryAction: action6("Confirm it is you", "/auth/callback", "primary", "Complete the extra check before account actions."),
-        secondaryAction: action6("Get support", "/account/recovery/recovery-only", "supportive", "Use account support if the check cannot complete."),
+        primaryAction: action7("Confirm it is you", "/auth/callback", "primary", "Complete the extra check before account actions."),
+        secondaryAction: action7("Get support", "/account/recovery/recovery-only", "supportive", "Use account support if the check cannot complete."),
         capabilities: ["Read-only pages may continue", "Changes need another check"],
         reasonCodes: ["low-assurance"]
       };
@@ -68015,8 +68659,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Confirm it is you",
         summary: "Please confirm it is you to continue.",
-        primaryAction: action6("Confirm it is you", "/auth/callback", "primary", "Refresh your sign-in before account actions."),
-        secondaryAction: action6("Get support", "/account/recovery/recovery-only", "supportive", "Use account support if confirmation cannot complete."),
+        primaryAction: action7("Confirm it is you", "/auth/callback", "primary", "Refresh your sign-in before account actions."),
+        secondaryAction: action7("Get support", "/account/recovery/recovery-only", "supportive", "Use account support if confirmation cannot complete."),
         capabilities: ["Account actions are paused", "Account check is available"],
         reasonCodes: ["reauth-required"]
       };
@@ -68024,8 +68668,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Limited access",
         summary: "Some actions are paused while we check your sign-in.",
-        primaryAction: action6("Get support", "/account/recovery/restricted", "primary", "Continue through the account check."),
-        secondaryAction: action6("Sign out", "/account/sign-out", "supportive", "End this sign-in."),
+        primaryAction: action7("Get support", "/account/recovery/restricted", "primary", "Continue through the account check."),
+        secondaryAction: action7("Sign out", "/account/sign-out", "supportive", "End this sign-in."),
         capabilities: ["Only safe account actions are available"],
         reasonCodes: ["restricted"]
       };
@@ -68033,8 +68677,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Support available",
         summary: "Use an account check to continue.",
-        primaryAction: action6("Get support", "/account/recovery/recovery-only", "primary", "Continue with account support."),
-        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page."),
+        primaryAction: action7("Get support", "/account/recovery/recovery-only", "primary", "Continue with account support."),
+        secondaryAction: action7("Return home", "/", "supportive", "Go back to the patient portal home page."),
         capabilities: ["Account check is available", "Account changes are paused"],
         reasonCodes: ["recovery-only"]
       };
@@ -68042,8 +68686,8 @@ function sessionCopyForPosture(posture) {
       return {
         label: "Sign-in expired",
         summary: "Your sign-in has expired. Please sign in again.",
-        primaryAction: action6("Sign in again", "/auth/callback", "primary", "Start a fresh sign-in check."),
-        secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page."),
+        primaryAction: action7("Sign in again", "/auth/callback", "primary", "Start a fresh sign-in check."),
+        secondaryAction: action7("Return home", "/", "supportive", "Go back to the patient portal home page."),
         capabilities: ["Account actions need fresh sign in", "Anonymous intake remains available"],
         reasonCodes: ["expired"]
       };
@@ -68052,11 +68696,11 @@ function sessionCopyForPosture(posture) {
 function signedInHomeProjectionForSession(session, scenario2 = "live") {
   const home = patientHomeProjectionForSession(session, scenario2);
   const primaryAction = home.nextAction.action;
-  const continueAction = gatedAction(action6("Continue a saved request", "/resume/saved-details", "supportive", "Open the latest saved request when the account can edit it."), session, "write");
-  const statusAction = gatedAction(action6("Check a request", "/status/trk_statuspreview", "supportive", "Open request status."), session, "read");
-  const appointmentsAction = gatedAction(action6("Appointments", "/appointments", "supportive", "Open appointment and waiting-list updates."), session, "read");
-  const manageAccountAction = gatedAction(action6("Manage account", "/account", "supportive", "Review account status and support options."), session, "read");
-  const signOutAction = action6("Sign out", "/account/sign-out", "supportive", "End this patient portal sign-in.");
+  const continueAction = gatedAction(action7("Continue a saved request", "/resume/saved-details", "supportive", "Open the latest saved request when the account can edit it."), session, "write");
+  const statusAction = gatedAction(action7("Check a request", "/status/trk_statuspreview", "supportive", "Open request status."), session, "read");
+  const appointmentsAction = gatedAction(action7("Appointments", "/appointments", "supportive", "Open appointment and waiting-list updates."), session, "read");
+  const manageAccountAction = gatedAction(action7("Manage account", "/account", "supportive", "Review account status and support options."), session, "read");
+  const signOutAction = action7("Sign out", "/account/sign-out", "supportive", "End this patient portal sign-in.");
   const recoveryPanel = homeRecoveryPanelForSession(session, primaryAction);
   const activeRequests = homeRequestsForSession(session, scenario2);
   const statusItems = session.posture === "signed_in_linked" ? scenario2 === "quiet" ? ["No active requests need attention.", "Messages and callbacks show the latest summaries available to you."] : scenario2 === "release_read_only" ? ["Request details stay visible while actions are paused.", "Messages and callbacks show the latest summaries available to you."] : [activeRequests.length === 1 ? "One request item is ready to review." : `${activeRequests.length} request items are ready to review.`, "Messages and callbacks show the latest summaries available to you."] : [session.summary, recoveryPanel?.message ?? primaryAction.helper];
@@ -68202,7 +68846,7 @@ function patientHomeProjectionForSession(session, scenario2) {
 }
 function reachabilitySummaryForHome(session, scenario2, computedAt) {
   if (scenario2 === "reachability_repair") {
-    const repairAction = gatedAction(action6("Check contact details", "/contact/repair/repair_callback_voice#collect", "primary", "Send the best phone number before replies or callbacks continue."), session, "write");
+    const repairAction = gatedAction(action7("Check contact details", "/contact/repair/repair_callback_voice#collect", "primary", "Send the best phone number before replies or callbacks continue."), session, "write");
     return {
       reachabilitySummaryId: "patient-reachability:repair-required",
       patientRef: "patient:current",
@@ -68287,7 +68931,7 @@ function activeRequestsCard(session, scenario2) {
   const requests = homeRequestsForSession(session, scenario2);
   const quiet = scenario2 === "quiet" || requests.length === 0;
   const readOnly = scenario2 === "release_read_only";
-  const actionProjection3 = quiet ? gatedAction(action6("Start a request", "/request/new", "supportive", "Start a request when you need help."), session, "write") : gatedAction(action6("View requests", "/request/trk_requestsubmitted", "supportive", "Open the current request summary."), session, "read");
+  const actionProjection3 = quiet ? gatedAction(action7("Start a request", "/request/new", "supportive", "Start a request when you need help."), session, "write") : gatedAction(action7("View requests", "/request/trk_requestsubmitted", "supportive", "Open the current request summary."), session, "read");
   return homeCard({
     order: "10",
     kind: "active_requests",
@@ -68310,7 +68954,7 @@ function appointmentsCard(session, scenario2) {
     stateLabel: pending ? "Confirmation pending" : "No action needed",
     summary: pending ? "The selected appointment is still being checked before a final appointment appears." : "Appointment and waiting-list updates will appear here.",
     trustCue: pending ? "No final appointment is shown until the review finishes." : "Checked with the appointment view.",
-    action: gatedAction(action6("Review appointments", "/appointments", "supportive", "Open appointments and waiting-list updates."), session, "read"),
+    action: gatedAction(action7("Review appointments", "/appointments", "supportive", "Open appointments and waiting-list updates."), session, "read"),
     cardState: pending ? "pending" : "quiet",
     selectedAnchorRef: pending ? "patient-anchor:appointments:pending" : "patient-anchor:appointments",
     detailRows: [
@@ -68327,7 +68971,7 @@ function messagesCard(session) {
     stateLabel: session.posture === "signed_in_linked" ? "3 unread" : "Hidden",
     summary: session.posture === "signed_in_linked" ? "Messages, callbacks, and contact updates share one inbox." : "Message details are visible after account confirmation.",
     trustCue: session.posture === "signed_in_linked" ? "One reply and one contact update need attention." : "More details show after confirmation.",
-    action: gatedAction(action6("Open messages", "/messages", "supportive", "Review messages and replies."), session, "read"),
+    action: gatedAction(action7("Open messages", "/messages", "supportive", "Review messages and replies."), session, "read"),
     cardState: session.posture === "signed_in_linked" ? "action_needed" : "quiet",
     selectedAnchorRef: "patient-anchor:messages",
     detailRows: [
@@ -68345,7 +68989,7 @@ function callbacksCard(session, scenario2) {
     stateLabel: repair ? "Check contact details" : session.posture === "signed_in_linked" ? "No callback booked" : "Visible after confirmation",
     summary: repair ? "A callback is waiting, but contact details need checking first." : "Any agreed callback time will be shown here.",
     trustCue: repair ? "Contact details must be checked before ordinary updates." : "No callback action is waiting.",
-    action: gatedAction(action6(repair ? "Check contact details" : "Open callbacks", repair ? "/contact/repair/repair_callback_voice#collect" : "/account", repair ? "primary" : "supportive", repair ? "Send the best phone number before callbacks continue." : "Review callback details when available."), session, repair ? "write" : "read"),
+    action: gatedAction(action7(repair ? "Check contact details" : "Open callbacks", repair ? "/contact/repair/repair_callback_voice#collect" : "/account", repair ? "primary" : "supportive", repair ? "Send the best phone number before callbacks continue." : "Review callback details when available."), session, repair ? "write" : "read"),
     cardState: repair ? "repair_required" : "quiet",
     selectedAnchorRef: repair ? "patient-anchor:reachability:repair" : "patient-anchor:callbacks",
     detailRows: [{ label: "Contact details", value: repair ? "Needs checking" : "Ready" }]
@@ -68362,7 +69006,7 @@ function pharmacyCard(session, scenario2) {
     stateLabel: consent ? "Consent needed" : pending ? "Referral pending" : "No pharmacy action",
     summary: consent ? "Consent is needed before the referral can continue." : pending ? "The pharmacy referral is still being checked and remains in progress." : "Pharmacy updates will appear when a referral is active.",
     trustCue: consent ? "Consent is needed before the referral can continue." : pending ? "The referral is still being checked." : "No active pharmacy blocker.",
-    action: gatedAction(action6(consent ? "Review consent" : pending ? "Check pharmacy status" : "Open pharmacy updates", consent ? consentHref : pending ? "/pharmacy/pharm_dispatch_pending/status" : "/pharmacy/pharm_choice/choose", consent ? "primary" : "supportive", consent ? "Review consent before the pharmacy referral is sent." : "Open pharmacy status."), session, consent ? "write" : "read"),
+    action: gatedAction(action7(consent ? "Review consent" : pending ? "Check pharmacy status" : "Open pharmacy updates", consent ? consentHref : pending ? "/pharmacy/pharm_dispatch_pending/status" : "/pharmacy/pharm_choice/choose", consent ? "primary" : "supportive", consent ? "Review consent before the pharmacy referral is sent." : "Open pharmacy status."), session, consent ? "write" : "read"),
     cardState: consent ? "repair_required" : pending ? "pending" : "quiet",
     selectedAnchorRef: consent ? "patient-anchor:pharmacy:consent" : pending ? "patient-anchor:pharmacy:dispatch-pending" : "patient-anchor:pharmacy",
     detailRows: [
@@ -68378,7 +69022,7 @@ function recordsCard(session) {
     stateLabel: session.posture === "signed_in_linked" ? "No new updates" : "Hidden",
     summary: session.posture === "signed_in_linked" ? "Record updates will appear here when they are ready to show." : "Record details are visible after account confirmation.",
     trustCue: session.posture === "signed_in_linked" ? "No record action is waiting." : "More details show after confirmation.",
-    action: gatedAction(action6("Review records", "/records", "supportive", "Open record summaries that are ready to show."), session, "read"),
+    action: gatedAction(action7("Review records", "/records", "supportive", "Open record summaries that are ready to show."), session, "read"),
     cardState: "quiet",
     selectedAnchorRef: "patient-anchor:records",
     detailRows: [{ label: "Updates", value: session.posture === "signed_in_linked" ? "None waiting" : "After confirmation" }]
@@ -68392,7 +69036,7 @@ function urgentHelpCard(session) {
     stateLabel: "Urgent help",
     summary: "Use urgent care if symptoms are severe or getting worse.",
     trustCue: "Urgent safety guidance stays available.",
-    action: gatedAction(action6("Start urgent help check", "/start", "supportive", "Open the safety-first request page."), session, "read"),
+    action: gatedAction(action7("Start urgent help check", "/start", "supportive", "Open the safety-first request page."), session, "read"),
     cardState: "ready",
     selectedAnchorRef: "patient-anchor:urgent-help",
     detailRows: [{ label: "Safety", value: "Use urgent care for severe symptoms" }]
@@ -68406,7 +69050,7 @@ function accountDetailsCard(session) {
     stateLabel: session.label,
     summary: session.summary,
     trustCue: "Account and security details stay on the account page.",
-    action: gatedAction(action6("Manage account", "/account", "supportive", "Review account status and support options."), session, "read"),
+    action: gatedAction(action7("Manage account", "/account", "supportive", "Review account status and support options."), session, "read"),
     cardState: session.posture === "signed_in_linked" ? "ready" : "repair_required",
     selectedAnchorRef: "patient-anchor:account",
     detailRows: session.capabilitySummary.map((item) => ({ label: "Access", value: item }))
@@ -68667,7 +69311,7 @@ function quietSpotlightCard(session) {
     stateLabel: "All quiet",
     summary: "Requests, appointments, messages, records, and pharmacy updates will appear here when they need attention.",
     trustCue: "Home is up to date.",
-    action: gatedAction(action6("Start a request", "/request/new", "supportive", "Start a request when you need help."), session, "write"),
+    action: gatedAction(action7("Start a request", "/request/new", "supportive", "Start a request when you need help."), session, "write"),
     cardState: "quiet",
     selectedAnchorRef: "patient-anchor:home:quiet",
     detailRows: [{ label: "Next safe action", value: "Start a request if you need help" }]
@@ -68682,7 +69326,7 @@ function startRequestSpotlightCard(session) {
     stateLabel: "Available",
     summary: session.posture === "signed_in_linked" ? "Start a new request when you need help. Active items stay below." : session.summary,
     trustCue: session.posture === "signed_in_linked" ? "Ready to start" : "Account checks decide which actions are safe.",
-    action: gatedAction(action6("Start a request", "/request/new", "primary", "Begin a new request with your signed-in account."), session, "write"),
+    action: gatedAction(action7("Start a request", "/request/new", "primary", "Begin a new request with your signed-in account."), session, "write"),
     cardState: session.posture === "signed_in_linked" ? "ready" : "recovery_required",
     selectedAnchorRef: "patient-anchor:home:start-request",
     detailRows: [
@@ -68761,15 +69405,15 @@ function patientHomeDegradedMode(input) {
     selectedAnchorRef: input.spotlightCard.selectedAnchorRef,
     recoveryRouteRef: "patient-route:recovery",
     primaryAction: input.nextAction.action,
-    secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page."),
+    secondaryAction: action7("Return home", "/", "supportive", "Go back to the patient portal home page."),
     continuityEvidenceRef: `patient-continuity-evidence:home:${input.scenario}`,
     computedAt: input.computedAt
   };
 }
 function homeRequestsForSession(session, scenario2 = "live") {
-  const submittedRequestAction = gatedAction(action6("Open request", "/request/trk_requestsubmitted", "supportive", "Open request progress."), session, "read");
-  const continueSavedAction = gatedAction(action6("Continue request", "/resume/saved-details", "supportive", "Continue from the saved details step."), session, "write");
-  const statusAction = gatedAction(action6("Check status", "/status/trk_statuspreview", "supportive", "Open request status."), session, "read");
+  const submittedRequestAction = gatedAction(action7("Open request", "/request/trk_requestsubmitted", "supportive", "Open request progress."), session, "read");
+  const continueSavedAction = gatedAction(action7("Continue request", "/resume/saved-details", "supportive", "Continue from the saved details step."), session, "write");
+  const statusAction = gatedAction(action7("Check status", "/status/trk_statuspreview", "supportive", "Open request status."), session, "read");
   if (session.posture === "signed_in_linked" && scenario2 === "quiet") {
     return [];
   }
@@ -68901,7 +69545,7 @@ function homeRecoveryPanelForSession(session, primaryAction) {
   if (session.posture === "signed_in_linked") {
     return void 0;
   }
-  const secondaryAction = session.secondaryAction && session.secondaryAction.href !== primaryAction.href ? session.secondaryAction : action6("Return home", "/", "supportive", "Go back to the patient portal home page.");
+  const secondaryAction = session.secondaryAction && session.secondaryAction.href !== primaryAction.href ? session.secondaryAction : action7("Return home", "/", "supportive", "Go back to the patient portal home page.");
   const kind = primaryAction.gated?.decisionState === "deny" ? "blocked" : "recovery_required";
   const fallback = {
     title: session.label,
@@ -68960,7 +69604,7 @@ function accountStatusProjectionForSession(session) {
   const actions = uniqueActions([
     session.primaryAction,
     ...session.secondaryAction ? [session.secondaryAction] : [],
-    action6("Return home", "/", "supportive", "Go back to the patient portal home page.")
+    action7("Return home", "/", "supportive", "Go back to the patient portal home page.")
   ]);
   return {
     session,
@@ -69680,31 +70324,31 @@ function actionRecoveryProjection(input) {
 function patientActionRecoveryCopy(reason) {
   switch (reason) {
     case "already_used":
-      return recoveryCopy3("This link has already been used", "For safety, this link can only open access once. Check status instead.", action6("Check status", "/status/trk_statuspreview", "primary", "Open the latest status."), "Status checking is available.");
+      return recoveryCopy3("This link has already been used", "For safety, this link can only open access once. Check status instead.", action7("Check status", "/status/trk_statuspreview", "primary", "Open the latest status."), "Status checking is available.");
     case "expired":
-      return recoveryCopy3("This link has expired", "Start again or get help if you still need support.", action6("Start again", "/start", "primary", "Begin a fresh request."), "The link has expired.");
+      return recoveryCopy3("This link has expired", "Start again or get help if you still need support.", action7("Start again", "/start", "primary", "Begin a fresh request."), "The link has expired.");
     case "superseded":
-      return recoveryCopy3("A newer link is needed", "Use the latest message from the service or get help to continue.", action6("Get help", "/recovery", "primary", "Get help without showing private details."), "A newer step is needed.");
+      return recoveryCopy3("A newer link is needed", "Use the latest message from the service or get help to continue.", action7("Get help", "/recovery", "primary", "Get help without showing private details."), "A newer step is needed.");
     case "denied_scope":
-      return recoveryCopy3("We need to check your account", "Get help so we can check this safely without showing private details.", action6("Get help", "/recovery", "primary", "Get help without showing private details."), "Help is available without showing private details.");
+      return recoveryCopy3("We need to check your account", "Get help so we can check this safely without showing private details.", action7("Get help", "/recovery", "primary", "Get help without showing private details."), "Help is available without showing private details.");
     case "consent_declined":
-      return recoveryCopy3("Consent is needed to continue", "You can choose another option or get help without showing private details.", action6("Get help", "/recovery", "primary", "Choose how to continue."), "A next step is available.");
+      return recoveryCopy3("Consent is needed to continue", "You can choose another option or get help without showing private details.", action7("Get help", "/recovery", "primary", "Choose how to continue."), "A next step is available.");
     case "identity_hold":
-      return recoveryCopy3("Confirm identity to continue", "We need to confirm it is you before showing more information.", action6("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."), "Identity confirmation is needed before more information is shown.");
+      return recoveryCopy3("Confirm identity to continue", "We need to confirm it is you before showing more information.", action7("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."), "Identity confirmation is needed before more information is shown.");
     case "identity_repair_required":
-      return recoveryCopy3("We need to check access before continuing", "Use help so this can be checked without showing private details.", action6("Get help", "/recovery", "primary", "Get help without showing private details."), "Access needs checking before continuing.");
+      return recoveryCopy3("We need to check access before continuing", "Use help so this can be checked without showing private details.", action7("Get help", "/recovery", "primary", "Get help without showing private details."), "Access needs checking before continuing.");
     case "stale_session":
-      return recoveryCopy3("Confirm it is you again", "Please confirm it is you before continuing.", action6("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."), "Confirmation is needed before continuing.");
+      return recoveryCopy3("Confirm it is you again", "Please confirm it is you before continuing.", action7("Confirm identity", "/auth/callback", "primary", "Confirm it is you before continuing."), "Confirmation is needed before continuing.");
     case "stale_route":
-      return recoveryCopy3("We need to recheck this link", "This link no longer matches the current journey.", action6("Recheck link", "/recovery", "primary", "Recheck before continuing."), "A link recheck is needed before continuing.");
+      return recoveryCopy3("We need to recheck this link", "This link no longer matches the current journey.", action7("Recheck link", "/recovery", "primary", "Recheck before continuing."), "A link recheck is needed before continuing.");
     case "release_frozen":
-      return recoveryCopy3("This action is paused", "We need to recheck availability before continuing.", action6("Recheck", "/recovery", "primary", "Recheck before continuing."), "Availability needs a recheck.");
+      return recoveryCopy3("This action is paused", "We need to recheck availability before continuing.", action7("Recheck", "/recovery", "primary", "Recheck before continuing."), "Availability needs a recheck.");
     case "channel_frozen":
-      return recoveryCopy3("This way in is paused", "Open help to continue.", action6("Open help", "/recovery", "primary", "Continue with help."), "A next step is available.");
+      return recoveryCopy3("This way in is paused", "Open help to continue.", action7("Open help", "/recovery", "primary", "Continue with help."), "A next step is available.");
     case "submitted_elsewhere":
-      return recoveryCopy3("This request has already been sent", "The editable draft cannot be reopened. Check status instead.", action6("Check status", "/status/trk_statuspreview", "primary", "Open the latest status."), "The editable draft cannot be reopened.");
+      return recoveryCopy3("This request has already been sent", "The editable draft cannot be reopened. Check status instead.", action7("Check status", "/status/trk_statuspreview", "primary", "Open the latest status."), "The editable draft cannot be reopened.");
     case "support_required":
-      return recoveryCopy3("Support is needed to continue", "Use help without showing private details.", action6("Get help", "/recovery", "primary", "Get help without showing private details."), "Help is needed before continuing.");
+      return recoveryCopy3("Support is needed to continue", "Use help without showing private details.", action7("Get help", "/recovery", "primary", "Get help without showing private details."), "Help is needed before continuing.");
   }
 }
 function recoveryCopy3(safeTitle, safeMessage, primaryAction, lastSafeSummary) {
@@ -69712,7 +70356,7 @@ function recoveryCopy3(safeTitle, safeMessage, primaryAction, lastSafeSummary) {
     safeTitle,
     safeMessage,
     primaryAction,
-    secondaryAction: action6("Return home", "/", "supportive", "Go back to the patient portal home page."),
+    secondaryAction: action7("Return home", "/", "supportive", "Go back to the patient portal home page."),
     lastSafeSummary
   };
 }
@@ -69728,7 +70372,7 @@ function stableRecoveryHash(parts) {
   }
   return hash.toString(36).padStart(7, "0");
 }
-function action6(label, href, tone, helper) {
+function action7(label, href, tone, helper) {
   return {
     label,
     href,
@@ -70341,8 +70985,8 @@ function patientSessionFromGovernor(projection, continueHref) {
     posture: patientPostureFor(projection),
     label: "Secure link checked",
     summary: "You can continue in this protected browser session. Account details are not shown from the link alone.",
-    primaryAction: action7("Continue securely", continueHref, "primary", "Continue after the secure link check."),
-    secondaryAction: action7("Return home", "/", "supportive", "Go back to the patient portal home page."),
+    primaryAction: action8("Continue securely", continueHref, "primary", "Continue after the secure link check."),
+    secondaryAction: action8("Return home", "/", "supportive", "Go back to the patient portal home page."),
     capabilitySummary: ["Secure link checked", "Private details stay hidden until needed"],
     safeReasonLabel: "Secure link session"
   };
@@ -70371,7 +71015,7 @@ function patientPostureFor(projection) {
       return "signed_out";
   }
 }
-function action7(label, href, tone, helper) {
+function action8(label, href, tone, helper) {
   return { label, href, tone, helper };
 }
 function isPromotedDraftRoute(grant, scopeEnvelope, request) {
@@ -70421,6 +71065,7 @@ var PatientRouteProjectionService = class {
   demoPatientMessageService;
   patientAppointmentService;
   patientProfileService;
+  patientRecordService;
   secureLinkRedemptionService;
   featureFlags;
   allowFixtureFallback;
@@ -70436,6 +71081,7 @@ var PatientRouteProjectionService = class {
     this.demoPatientMessageService = options.demoPatientMessageService;
     this.patientAppointmentService = options.patientAppointmentService ?? new PatientAppointmentService(clockOptions);
     this.patientProfileService = options.patientProfileService ?? new PatientProfileService();
+    this.patientRecordService = options.patientRecordService ?? new PatientRecordService(clockOptions);
     this.secureLinkRedemptionService = options.secureLinkRedemptionService ?? new SecureLinkRedemptionService(clockOptions);
     this.featureFlags = options.featureFlags ?? defaultPatientProjectionFeatureFlags;
     this.allowFixtureFallback = options.allowFixtureFallback ?? false;
@@ -70577,8 +71223,12 @@ var PatientRouteProjectionService = class {
     return projectionWithCleanStartDemoPatient(
       this.projectionWithDemoPatientMessages(
         this.projectionWithPatientAppointments(
-          this.projectionWithPatientAccountProfile(
-            adaptPatientRouteProjection(route, this.featureFlags, projectionContext),
+          this.projectionWithPatientRecords(
+            this.projectionWithPatientAccountProfile(
+              adaptPatientRouteProjection(route, this.featureFlags, projectionContext),
+              requestBinding
+            ),
+            route,
             requestBinding
           ),
           route,
@@ -70665,6 +71315,25 @@ var PatientRouteProjectionService = class {
       };
     }
     return projection;
+  }
+  projectionWithPatientRecords(projection, route, requestBinding) {
+    if (route.key !== "records" && route.key !== "recordDetail" || projection.patientRecordOverview === void 0) {
+      return projection;
+    }
+    const patientRecordOverview = this.patientRecordService.recordOverviewForPatientBinding(
+      projection.patientRecordOverview,
+      requestBinding
+    );
+    if (patientRecordOverview === void 0) {
+      return projection;
+    }
+    return {
+      ...projection,
+      patientRecordOverview,
+      pageTitle: patientRecordOverview.pageTitle,
+      summary: patientRecordOverview.summary,
+      primaryAction: patientRecordOverview.dominantAction
+    };
   }
 };
 function isAppointmentManageRouteKey(routeKey) {
@@ -70756,7 +71425,7 @@ function cleanStartSignedInHome(home) {
       primaryAction,
       secondaryActions: [
         supportiveAction,
-        ...home.actions.secondaryActions.filter((action8) => !/continue|saved|check a request/iu.test(action8.label))
+        ...home.actions.secondaryActions.filter((action9) => !/continue|saved|check a request/iu.test(action9.label))
       ]
     },
     activeRequests: [],
@@ -71514,7 +72183,7 @@ function statusCodeFor2(error) {
 
 // services/api-gateway/src/services/patient-waitlist-response.service.ts
 import { createHash as createHash28 } from "node:crypto";
-var defaultNow9 = () => /* @__PURE__ */ new Date();
+var defaultNow10 = () => /* @__PURE__ */ new Date();
 function snapshotWaitlistResponseReceipt(receipt) {
   return Object.freeze({ ...receipt });
 }
@@ -71542,7 +72211,7 @@ var PatientWaitlistResponseService = class {
   now;
   receiptsByIdempotencyKey = /* @__PURE__ */ new Map();
   constructor(options = {}) {
-    this.now = options.now ?? defaultNow9;
+    this.now = options.now ?? defaultNow10;
   }
   submitResponse(waitlistOfferId, request) {
     const requestFingerprint2 = waitlistResponseRequestFingerprint(waitlistOfferId, request);
@@ -72889,6 +73558,10 @@ async function createGatewayApp(options = {}) {
     persistenceFile: config.patientAppointmentPersistenceFile,
     now
   });
+  const patientRecordService = options.patientRecordService ?? new PatientRecordService({
+    persistenceFile: config.patientRecordPersistenceFile,
+    now
+  });
   const initialIntakeRepositorySnapshot = sharedIntakeRepository instanceof InMemoryIntakeDraftRepository ? sharedIntakeRepository.exportSnapshot() : void 0;
   const clinicalWorkspaceStaffAuthService = options.clinicalWorkspaceStaffAuthService ?? new ClinicalWorkspaceStaffAuthService({
     allowDemoSessions: !config.production,
@@ -72990,6 +73663,7 @@ async function createGatewayApp(options = {}) {
     demoPatientMessageService,
     patientAppointmentService,
     patientProfileService,
+    patientRecordService,
     secureLinkRedemptionService,
     allowFixtureFallback: !config.production,
     now
@@ -73077,4 +73751,3 @@ export {
   markRuntimeClosing,
   startGatewayServer
 };
-//# sourceMappingURL=server.js.map

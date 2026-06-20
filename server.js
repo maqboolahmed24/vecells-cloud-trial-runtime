@@ -27283,6 +27283,12 @@ function isPatientPharmacyCaseRouteParam(value) {
 function isPatientWaitlistOfferRouteParam(value) {
   return isSafePublicRef(value) && value.startsWith("wlo_");
 }
+function isPatientNetworkOfferRouteParam(value) {
+  return isSafePublicRef(value) && value.startsWith("offer_");
+}
+function isPatientContactRepairRouteParam(value) {
+  return isSafePublicRef(value) && value.startsWith("repair_");
+}
 function isPatientRecordRouteParam(value) {
   return typeof value === "string" && /^[A-Za-z0-9._:-]{1,80}$/u.test(value) && !/(raw|payload|debug|fhir|provider|nhs)/iu.test(value);
 }
@@ -27363,6 +27369,14 @@ function isPatientRoutePathBoundToParams(key, path, params) {
   if (key === "waitlistOffer") {
     const waitlistOfferId = params.waitlistOfferId;
     return isPatientWaitlistOfferRouteParam(waitlistOfferId) && path === `/waitlist/offers/${encodeURIComponent(waitlistOfferId)}`;
+  }
+  if (key === "networkOffer") {
+    const offerSessionId = params.offerSessionId;
+    return isPatientNetworkOfferRouteParam(offerSessionId) && path === `/network-offers/${encodeURIComponent(offerSessionId)}`;
+  }
+  if (key === "contactRepair") {
+    const repairJourneyId = params.repairJourneyId;
+    return isPatientContactRepairRouteParam(repairJourneyId) && path === `/contact/repair/${encodeURIComponent(repairJourneyId)}`;
   }
   if (key === "recordDetail") {
     const recordItemId = params.recordItemId;

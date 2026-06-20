@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" role="img" aria-label="Clinician profile placeholder">
+  <rect width="150" height="150" rx="75" fill="#f1f5f9"/>
+  <circle cx="75" cy="57" r="29" fill="#334155"/>
+  <path d="M31 132c7-27 24-42 44-42s37 15 44 42" fill="#0f766e"/>
+  <path d="M52 61c6 9 40 9 46 0" fill="none" stroke="#e2e8f0" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="64" cy="53" r="4" fill="#e2e8f0"/>
+  <circle cx="86" cy="53" r="4" fill="#e2e8f0"/>
+  <path d="M51 98v14a24 24 0 0 0 48 0V98" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="51" cy="98" r="6" fill="#ffffff"/>
+  <circle cx="99" cy="98" r="6" fill="#ffffff"/>
+  <text x="75" y="132" fill="#ffffff" font-family="Arial, sans-serif" font-size="28" font-weight="700" text-anchor="middle">CL</text>
+</svg>

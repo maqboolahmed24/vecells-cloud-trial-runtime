@@ -20573,7 +20573,8 @@ var demoClinicianAccounts = [
       workPhoneNumber: "+441206000401",
       baseAddressLines: ["Colchester Medical Practice", "Castle Road", "Colchester"],
       postcode: "ZZ1 1CP",
-      workingHoursLabel: "Monday to Friday, 08:30-17:00"
+      workingHoursLabel: "Monday to Friday, 08:30-17:00",
+      profileImage: demoProfileImage("/demo-profiles/clinician-colchester.svg", "Dr Johny profile placeholder")
     })
   },
   {
@@ -22289,7 +22290,7 @@ function patientContinuityDemographics(patient) {
     },
     {
       label: "Registered practice",
-      value: `Since ${formatDemoDate(patient.pilotProfile.registeredPracticeSince)}`
+      value: `${patient.practiceLabel}, since ${formatDemoDate(patient.pilotProfile.registeredPracticeSince)}`
     },
     {
       label: "Emergency contact",
@@ -27265,6 +27266,18 @@ function isRouteParamRecord(value) {
 function isPatientRequestPublicRouteParam(value) {
   return isSafePublicRef(value) && value.startsWith("trk_");
 }
+function isPatientRequestDetailRoutePath(requestId, path) {
+  const encodedRequestId = encodeURIComponent(requestId);
+  return path === `/request/${encodedRequestId}` || path === `/requests/${encodedRequestId}`;
+}
+function patientRequestDetailRouteParam(params) {
+  const requestId = params.requestId;
+  const requestPublicId = params.requestPublicId;
+  if (requestId !== void 0 && requestPublicId !== void 0 && requestId !== requestPublicId) {
+    return void 0;
+  }
+  return requestId ?? requestPublicId;
+}
 function isPatientSecureLinkRouteParam(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 255 && /^[A-Za-z0-9][A-Za-z0-9._~-]{0,254}$/u.test(value);
 }
@@ -27342,6 +27355,10 @@ function patientPharmacyRoutePathFor(key, pharmacyCaseId) {
   }
 }
 function isPatientRoutePathBoundToParams(key, path, params) {
+  if (key === "requestDetail") {
+    const requestId = patientRequestDetailRouteParam(params);
+    return isPatientRequestPublicRouteParam(requestId) && isPatientRequestDetailRoutePath(requestId, path);
+  }
   if (key === "requestReceipt") {
     const requestPublicId = params.requestPublicId;
     return isPatientRequestPublicRouteParam(requestPublicId) && path === `/request/${encodeURIComponent(requestPublicId)}/receipt`;
@@ -29267,7 +29284,8 @@ var demoClinicianAccounts2 = [
       workPhoneNumber: "+441206000401",
       baseAddressLines: ["Colchester Medical Practice", "Castle Road", "Colchester"],
       postcode: "ZZ1 1CP",
-      workingHoursLabel: "Monday to Friday, 08:30-17:00"
+      workingHoursLabel: "Monday to Friday, 08:30-17:00",
+      profileImage: demoProfileImage2("/demo-profiles/clinician-colchester.svg", "Dr Johny profile placeholder")
     })
   },
   {
@@ -43261,7 +43279,13 @@ function intakeInspectorProjectionForPromotion(base, promotionRecord, draftRecor
     demoPatient3
   );
   const timeline = intakeInspectorTimelineFor(promotionRecord, envelope, settlement, receiptEnvelope, demoPatient3);
-  const liveCaptureSummary = liveCaptureSummaryForIntake(persistedState?.structuredAnswers ?? envelope?.structuredAnswers);
+  const liveCaptureSummary = liveCaptureSummaryForIntake({
+    structuredAnswers: persistedState?.structuredAnswers ?? envelope?.structuredAnswers,
+    freeTextNarrative: persistedState?.freeTextNarrative ?? envelope?.freeTextNarrative,
+    contactPreferences: persistedState?.contactPreferences ?? envelope?.contactPreferences,
+    patientDisplayName: demoPatient3?.displayName ?? draftPatientDisplayName(draftRecord),
+    updatedAt: persistedState?.updatedAt ?? envelope?.updatedAt ?? promotionRecord.promotedAt
+  });
   return {
     ...base,
     inspectorId: `intake-inspector:${promotionRecord.requestPublicId}`,
@@ -43351,23 +43375,115 @@ function intakeInspectorProjectionForPromotion(base, promotionRecord, draftRecor
     ...liveCaptureSummary === void 0 ? {} : { liveCaptureSummary }
   };
 }
-function liveCaptureSummaryForIntake(structuredAnswers) {
+function liveCaptureSummaryForIntake(input) {
+  const structuredAnswers = input.structuredAnswers;
   const sourceKind = intakeInspectorCaptureSourceKind(structuredAnswers?.capture_context);
   const callerSummary = staffSafeAnswerText(structuredAnswers?.caller_summary);
   const reasonSummary = staffSafeAnswerText(structuredAnswers?.reason_summary);
   const safetySummary = staffSafeAnswerText(structuredAnswers?.safety_summary);
   const contactPreference = staffSafeAnswerText(structuredAnswers?.contact_preference_summary);
-  if ([callerSummary, reasonSummary, safetySummary, contactPreference].every((value) => value.length === 0)) {
+  if ([callerSummary, reasonSummary, safetySummary, contactPreference].some((value) => value.length > 0)) {
+    return {
+      ...sourceKind === void 0 ? {} : { sourceKind },
+      callerSummary,
+      reasonSummary,
+      safetySummary,
+      contactPreference,
+      updatedLabel: timeLabel(staffSafeAnswerText(structuredAnswers?.capture_updated_at) || input.updatedAt, "Saved")
+    };
+  }
+  return patientFormCaptureSummaryForIntake(input);
+}
+function patientFormCaptureSummaryForIntake(input) {
+  const structuredAnswers = input.structuredAnswers;
+  const reasonSummary = patientFormReasonSummary(structuredAnswers, input.freeTextNarrative);
+  if (reasonSummary.length === 0) {
     return void 0;
   }
   return {
-    ...sourceKind === void 0 ? {} : { sourceKind },
-    callerSummary,
+    sourceKind: "patient_form",
+    callerSummary: staffSafeClinicalSummaryText(input.patientDisplayName, 80) || "Patient",
     reasonSummary,
-    safetySummary,
-    contactPreference,
-    updatedLabel: timeLabel(staffSafeAnswerText(structuredAnswers?.capture_updated_at), "Saved")
+    safetySummary: patientFormSafetySummary(structuredAnswers),
+    contactPreference: contactPreferenceSummaryForIntake(input.contactPreferences),
+    updatedLabel: timeLabel(input.updatedAt, "Saved")
   };
+}
+function patientFormReasonSummary(structuredAnswers, freeTextNarrative) {
+  const category = staffSafeClinicalSummaryText(structuredAnswers?.symptoms_category, 80);
+  const onset = staffSafeClinicalSummaryText(structuredAnswers?.symptoms_onset, 120);
+  const impact = staffSafeClinicalSummaryText(structuredAnswers?.symptoms_impact, 180);
+  const narrative = [
+    structuredAnswers?.symptoms_narrative,
+    structuredAnswers?.medication_issue_description,
+    structuredAnswers?.medication_question,
+    structuredAnswers?.admin_request_details,
+    structuredAnswers?.admin_details,
+    structuredAnswers?.results_question,
+    freeTextNarrative
+  ].map((value) => staffSafeClinicalSummaryText(value, 260)).find((value) => value.length > 0) ?? "";
+  const parts = [
+    category.length === 0 ? void 0 : sentenceLabel(category),
+    onset.length === 0 ? void 0 : `Started: ${onset}`,
+    impact.length === 0 ? void 0 : `Impact: ${impact}`,
+    narrative.length === 0 ? void 0 : `Details: ${narrative}`
+  ].filter((part) => part !== void 0);
+  return parts.join(". ");
+}
+function patientFormSafetySummary(structuredAnswers) {
+  if (answerBoolean(structuredAnswers?.symptoms_urgent_today) === true || answerBoolean(structuredAnswers?.urgent_today) === true) {
+    return "Patient said urgent help is needed today.";
+  }
+  const safetyText = [
+    structuredAnswers?.symptoms_safety,
+    structuredAnswers?.red_flags,
+    structuredAnswers?.safety_summary
+  ].map((value) => staffSafeClinicalSummaryText(value, 220)).find((value) => value.length > 0);
+  if (safetyText !== void 0) {
+    return safetyText;
+  }
+  if (answerBoolean(structuredAnswers?.symptoms_urgent_today) === false || answerBoolean(structuredAnswers?.urgent_today) === false) {
+    return "Patient said urgent help is not needed today.";
+  }
+  return "No urgent warning was recorded on the form.";
+}
+function contactPreferenceSummaryForIntake(contactPreferences) {
+  if (contactPreferences === void 0) {
+    return "Contact preference not recorded.";
+  }
+  const phoneNumber = staffSafeClinicalSummaryText(contactPreferences.phoneNumber, 80);
+  const emailAddress = staffSafeClinicalSummaryText(contactPreferences.emailAddress, 120);
+  const bestTimes = (contactPreferences.bestTimes ?? []).map((time) => staffSafeClinicalSummaryText(time.label, 80)).filter((time) => time.length > 0).join(", ");
+  const timing = bestTimes.length > 0 ? ` Best time: ${bestTimes}.` : "";
+  switch (contactPreferences.preferredContactMethod) {
+    case "sms":
+      return `Text message updates${phoneNumber.length > 0 ? ` to ${phoneNumber}` : ""}.${timing}`;
+    case "phone":
+      return `Phone call${phoneNumber.length > 0 ? ` to ${phoneNumber}` : ""}.${timing}`;
+    case "email":
+      return `Email updates${emailAddress.length > 0 ? ` to ${emailAddress}` : ""}.${timing}`;
+    case "online_message":
+      return `Online message updates.${timing}`;
+    case "no_preference":
+    default:
+      return `No contact preference recorded.${timing}`;
+  }
+}
+function answerBoolean(value) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return void 0;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (["true", "yes", "y", "needed", "urgent"].includes(normalized)) {
+    return true;
+  }
+  if (["false", "no", "n", "not needed", "routine"].includes(normalized)) {
+    return false;
+  }
+  return void 0;
 }
 function intakeInspectorCaptureSourceKind(value) {
   if (value === "manual_intake") {
@@ -43383,6 +43499,16 @@ function intakeInspectorCaptureSourceKind(value) {
 }
 function staffSafeAnswerText(value) {
   return typeof value === "string" ? value.trim() : "";
+}
+function staffSafeClinicalSummaryText(value, maxLength) {
+  const normalized = staffSafeAnswerText(value).replace(/\s+/gu, " ");
+  if (normalized.length === 0 || rawUrlSchemePattern4.test(normalized) || /[<>]/u.test(normalized)) {
+    return "";
+  }
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+  return `${normalized.slice(0, Math.max(0, maxLength - 3)).trim()}...`;
 }
 function demoPatientIdentityForDraft(draftRecord) {
   const envelope = draftRecord?.envelope;
@@ -58579,7 +58705,7 @@ var PatientAppointmentService = class {
       return;
     }
     mkdirSync3(dirname4(this.persistenceFile), { recursive: true });
-    const snapshot = loadSnapshotFromDisk2(this.persistenceFile) ?? seedPatientAppointmentSnapshot();
+    const snapshot = mergePatientAppointmentSnapshot(loadSnapshotFromDisk2(this.persistenceFile) ?? seedPatientAppointmentSnapshot());
     this.replaceWithSnapshot(snapshot);
     this.persistIfConfigured();
   }
@@ -58799,6 +58925,43 @@ function seedPatientAppointmentSnapshot() {
     schemaVersion: "1.0",
     records: demoPatientAccounts2.map((account) => appointmentRecordForDemoPatient(account))
   };
+}
+function mergePatientAppointmentSnapshot(snapshot) {
+  const seed = seedPatientAppointmentSnapshot();
+  const existingByPatientId = new Map(snapshot.records.map((record2) => [record2.patientId, record2]));
+  const seededPatientIds = new Set(seed.records.map((record2) => record2.patientId));
+  const records = seed.records.map((seedRecord) => {
+    const existing = existingByPatientId.get(seedRecord.patientId);
+    return existing === void 0 ? seedRecord : mergePatientAppointmentRecord(seedRecord, existing);
+  });
+  const additionalRecords = snapshot.records.filter((record2) => !seededPatientIds.has(record2.patientId)).map(snapshotRecord);
+  return {
+    schemaVersion: "1.0",
+    records: [...records, ...additionalRecords]
+  };
+}
+function mergePatientAppointmentRecord(seed, existing) {
+  return {
+    patientId: existing.patientId,
+    requestBinding: { ...existing.requestBinding },
+    practice: { ...seed.practice, addressLines: [...seed.practice.addressLines] },
+    clinician: { ...seed.clinician },
+    appointments: mergeStoredAppointments(seed.appointments, existing.appointments)
+  };
+}
+function mergeStoredAppointments(seedAppointments, existingAppointments) {
+  const existingById = new Map(existingAppointments.map((appointment) => [appointment.appointmentId, appointment]));
+  const seededIds = new Set(seedAppointments.map((appointment) => appointment.appointmentId));
+  const appointments = seedAppointments.map((seedAppointment) => {
+    const existing = existingById.get(seedAppointment.appointmentId);
+    return existing === void 0 ? { ...seedAppointment } : {
+      ...seedAppointment,
+      status: existing.status,
+      canCancel: existing.canCancel
+    };
+  });
+  const additionalAppointments = existingAppointments.filter((appointment) => !seededIds.has(appointment.appointmentId)).map((appointment) => ({ ...appointment }));
+  return [...appointments, ...additionalAppointments];
 }
 function appointmentRecordForDemoPatient(account) {
   const clinician = clinicianForPractice(account.practiceRef);
@@ -60272,7 +60435,7 @@ function profileRecordForDemoAccount(account) {
       },
       {
         label: "Registered practice",
-        value: `Since ${formatPatientProfileDate(account.pilotProfile.registeredPracticeSince)}`
+        value: `${account.practiceLabel}, since ${formatPatientProfileDate(account.pilotProfile.registeredPracticeSince)}`
       },
       {
         label: "Emergency contact",

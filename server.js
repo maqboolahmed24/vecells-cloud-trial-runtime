@@ -17541,6 +17541,21 @@ function hasControlCharacter2(value) {
 function isLocalHref(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 240 && value.startsWith("/") && !value.startsWith("//") && !value.includes("..") && !hasControlCharacter2(value);
 }
+function settlementRequestIdentityMatches(value) {
+  if (value.requestPublicId === void 0 || value.trackingRef === void 0) {
+    return value.requestPublicId === void 0 && value.trackingRef === void 0;
+  }
+  return typeof value.requestPublicId === "string" && typeof value.trackingRef === "string" && value.trackingRef === value.requestPublicId;
+}
+function isSettlementRequestHref(href, requestPublicId, resource) {
+  if (href === void 0) {
+    return true;
+  }
+  if (typeof requestPublicId !== "string" || !isLocalHref(href)) {
+    return false;
+  }
+  return href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/${resource}`;
+}
 function isPatientSafeUrgentCopy(value) {
   return typeof value === "string" && value.trim().length > 0 && value.length <= 260 && !/\b(rule|rule id|score|payload|debug|hash|sha256|internal|request:|safety-decision:|preemption)\b/iu.test(value);
 }
@@ -17602,7 +17617,7 @@ function isIntakeSubmitSettlementView(value) {
     "fallbackReview",
     "patientSafeMessage",
     "recordedAt"
-  ]) && isSafeIdentifier2(value.intakeSubmitSettlementId) && value.intakeSubmitSettlementId.startsWith("intake-submit-settlement:") && isSafeIdentifier2(value.draftPublicId) && isOptionalSafeIdentifier2(value.requestPublicId) && isOptionalSafeIdentifier2(value.trackingRef) && isIntakeSubmitResult(value.result) && isIntakeSubmitAuthoritativeState(value.authoritativeState) && (value.receiptHref === void 0 || isLocalHref(value.receiptHref)) && (value.statusHref === void 0 || isLocalHref(value.statusHref)) && (value.urgentDiversion === void 0 || value.result === "urgent_diversion" && isIntakeUrgentDiversionPresentationView(value.urgentDiversion)) && (value.fallbackReview === void 0 || value.result === "fallback_review" && isIntakeFallbackReviewPresentationView(value.fallbackReview)) && typeof value.patientSafeMessage === "string" && value.patientSafeMessage.length > 0 && value.patientSafeMessage.length <= 240 && typeof value.recordedAt === "string" && isIsoDateTime(value.recordedAt);
+  ]) && isSafeIdentifier2(value.intakeSubmitSettlementId) && value.intakeSubmitSettlementId.startsWith("intake-submit-settlement:") && isSafeIdentifier2(value.draftPublicId) && isOptionalSafeIdentifier2(value.requestPublicId) && isOptionalSafeIdentifier2(value.trackingRef) && settlementRequestIdentityMatches(value) && isIntakeSubmitResult(value.result) && isIntakeSubmitAuthoritativeState(value.authoritativeState) && isSettlementRequestHref(value.receiptHref, value.requestPublicId, "receipt") && isSettlementRequestHref(value.statusHref, value.requestPublicId, "status") && (value.urgentDiversion === void 0 || value.result === "urgent_diversion" && isIntakeUrgentDiversionPresentationView(value.urgentDiversion)) && (value.fallbackReview === void 0 || value.result === "fallback_review" && isIntakeFallbackReviewPresentationView(value.fallbackReview)) && typeof value.patientSafeMessage === "string" && value.patientSafeMessage.length > 0 && value.patientSafeMessage.length <= 240 && typeof value.recordedAt === "string" && isIsoDateTime(value.recordedAt);
 }
 function isIntakeSubmitResponse(value) {
   return isRecord5(value) && hasOnlyRecordKeys3(value, ["schemaVersion", "settlement", "eventRefs"]) && value.schemaVersion === "1.0" && isIntakeSubmitSettlementView(value.settlement) && (value.eventRefs === void 0 || Array.isArray(value.eventRefs) && value.eventRefs.every(isSafeIdentifier2));
@@ -18613,6 +18628,18 @@ function hasControlCharacter12(value) {
 function isLocalHref2(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 240 && value.startsWith("/") && !value.startsWith("//") && !value.includes("..") && !hasControlCharacter12(value);
 }
+function receiptRequestIdentityMatches(value) {
+  return typeof value.requestPublicId === "string" && typeof value.trackingRef === "string" && value.trackingRef === value.requestPublicId;
+}
+function isDirectIntakeRequestHref(href, requestPublicId, resource) {
+  return typeof requestPublicId === "string" && isLocalHref2(href) && href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/${resource}`;
+}
+function isReceiptActionBoundToRequest(action6, requestPublicId) {
+  if (!action6.href.startsWith("/v1/intake/requests/")) {
+    return true;
+  }
+  return action6.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/receipt` || action6.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/status`;
+}
 function isPatientCopy(value) {
   return typeof value === "string" && value.trim().length > 0 && value.length <= 280 && !publicCopyForbiddenPattern.test(value);
 }
@@ -18749,7 +18776,7 @@ function isPatientReceiptView(value) {
     "artifactPresentationContractRef",
     "statusStrip",
     "issuedAt"
-  ]) && isSafeIdentifier11(value.requestPublicId) && String(value.requestPublicId).startsWith("trk_") && isSafeIdentifier11(value.trackingRef) && String(value.trackingRef).startsWith("trk_") && isPatientReceiptState(value.receiptState) && isPatientReceiptOutcomeKind(value.outcomeKind) && isPatientReceiptSafetyViewState(value.safetyState) && (value.requestSafetyState === void 0 || value.requestSafetyState === "screen_clear" || value.requestSafetyState === "residual_risk_flagged" || value.requestSafetyState === "urgent_diversion_required" || value.requestSafetyState === "urgent_diverted" || value.requestSafetyState === "fallback_manual_review") && (value.workflowState === void 0 || value.workflowState === "submitted" || value.workflowState === "intake_normalized" || value.workflowState === "triage_ready" || value.workflowState === "triage_active" || value.workflowState === "handoff_active" || value.workflowState === "outcome_recorded" || value.workflowState === "closed") && isPatientCopy(value.heading) && isPatientCopy(value.summary) && (value.patientSafeSummary === void 0 || isPatientIntakeSafeSummaryView(value.patientSafeSummary)) && isPatientCopy(value.safetyLabel) && isPatientCopy(value.etaLabel) && isPatientCopy(value.nextStepLabel) && isPatientReceiptFreshnessView(value.freshness) && isLocalHref2(value.receiptHref) && isLocalHref2(value.statusHref) && Array.isArray(value.actions) && value.actions.length > 0 && value.actions.every(isPatientReceiptActionView) && isPatientReceiptArtifactView(value.artifact) && (value.artifactPresentationContractRef === void 0 || isSafeIdentifier11(value.artifactPresentationContractRef)) && isPatientReceiptStatusStripView(value.statusStrip) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt);
+  ]) && isSafeIdentifier11(value.requestPublicId) && String(value.requestPublicId).startsWith("trk_") && isSafeIdentifier11(value.trackingRef) && String(value.trackingRef).startsWith("trk_") && receiptRequestIdentityMatches(value) && isPatientReceiptState(value.receiptState) && isPatientReceiptOutcomeKind(value.outcomeKind) && isPatientReceiptSafetyViewState(value.safetyState) && (value.requestSafetyState === void 0 || value.requestSafetyState === "screen_clear" || value.requestSafetyState === "residual_risk_flagged" || value.requestSafetyState === "urgent_diversion_required" || value.requestSafetyState === "urgent_diverted" || value.requestSafetyState === "fallback_manual_review") && (value.workflowState === void 0 || value.workflowState === "submitted" || value.workflowState === "intake_normalized" || value.workflowState === "triage_ready" || value.workflowState === "triage_active" || value.workflowState === "handoff_active" || value.workflowState === "outcome_recorded" || value.workflowState === "closed") && isPatientCopy(value.heading) && isPatientCopy(value.summary) && (value.patientSafeSummary === void 0 || isPatientIntakeSafeSummaryView(value.patientSafeSummary)) && isPatientCopy(value.safetyLabel) && isPatientCopy(value.etaLabel) && isPatientCopy(value.nextStepLabel) && isPatientReceiptFreshnessView(value.freshness) && isDirectIntakeRequestHref(value.receiptHref, value.requestPublicId, "receipt") && isDirectIntakeRequestHref(value.statusHref, value.requestPublicId, "status") && Array.isArray(value.actions) && value.actions.length > 0 && value.actions.every((action6) => isPatientReceiptActionView(action6) && typeof value.requestPublicId === "string" && isReceiptActionBoundToRequest(action6, value.requestPublicId)) && isPatientReceiptArtifactView(value.artifact) && (value.artifactPresentationContractRef === void 0 || isSafeIdentifier11(value.artifactPresentationContractRef)) && isPatientReceiptStatusStripView(value.statusStrip) && typeof value.issuedAt === "string" && isIsoDateTime(value.issuedAt);
 }
 function isPatientReceiptResponse(value) {
   return isRecord15(value) && hasOnlyRecordKeys13(value, ["schemaVersion", "receipt"]) && value.schemaVersion === "1.0" && isPatientReceiptView(value.receipt);
@@ -18788,6 +18815,18 @@ function hasControlCharacter13(value) {
 }
 function isLocalHref3(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 240 && value.startsWith("/") && !value.startsWith("//") && !value.includes("..") && !hasControlCharacter13(value);
+}
+function statusRequestIdentityMatches(value) {
+  return typeof value.requestPublicId === "string" && typeof value.trackingRef === "string" && value.trackingRef === value.requestPublicId;
+}
+function isDirectIntakeRequestHref2(href, requestPublicId, resource) {
+  return typeof requestPublicId === "string" && isLocalHref3(href) && href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/${resource}`;
+}
+function isStatusActionBoundToRequest(action6, requestPublicId) {
+  if (!action6.href.startsWith("/v1/intake/requests/")) {
+    return true;
+  }
+  return action6.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/receipt` || action6.href === `/v1/intake/requests/${encodeURIComponent(requestPublicId)}/status`;
 }
 function isPatientCopy2(value) {
   return typeof value === "string" && value.trim().length > 0 && value.length <= 280 && !publicCopyForbiddenPattern2.test(value);
@@ -18919,7 +18958,7 @@ function isPatientStatusView(value) {
     "recoveryHref",
     "patientSafeSummary",
     "timeline"
-  ]) && isSafeIdentifier12(value.requestPublicId) && String(value.requestPublicId).startsWith("trk_") && isSafeIdentifier12(value.trackingRef) && String(value.trackingRef).startsWith("trk_") && isPatientStatusState(value.state) && isPatientCopy2(value.label) && isPatientCopy2(value.explanation) && isPatientStatusActionView(value.nextAction) && isPatientStatusFreshnessView(value.freshness) && isPatientCopy2(value.lastUpdatedLabel) && isLocalHref3(value.receiptHref) && isLocalHref3(value.statusHref) && (value.recoveryHref === void 0 || isLocalHref3(value.recoveryHref)) && (value.patientSafeSummary === void 0 || isPatientStatusSafeSummaryView(value.patientSafeSummary)) && Array.isArray(value.timeline) && value.timeline.length > 0 && value.timeline.every(isPatientStatusTimelineStepView);
+  ]) && isSafeIdentifier12(value.requestPublicId) && String(value.requestPublicId).startsWith("trk_") && isSafeIdentifier12(value.trackingRef) && String(value.trackingRef).startsWith("trk_") && statusRequestIdentityMatches(value) && isPatientStatusState(value.state) && isPatientCopy2(value.label) && isPatientCopy2(value.explanation) && isPatientStatusActionView(value.nextAction) && typeof value.requestPublicId === "string" && isStatusActionBoundToRequest(value.nextAction, value.requestPublicId) && isPatientStatusFreshnessView(value.freshness) && isPatientCopy2(value.lastUpdatedLabel) && isDirectIntakeRequestHref2(value.receiptHref, value.requestPublicId, "receipt") && isDirectIntakeRequestHref2(value.statusHref, value.requestPublicId, "status") && (value.recoveryHref === void 0 || isLocalHref3(value.recoveryHref)) && (value.patientSafeSummary === void 0 || isPatientStatusSafeSummaryView(value.patientSafeSummary)) && Array.isArray(value.timeline) && value.timeline.length > 0 && value.timeline.every(isPatientStatusTimelineStepView);
 }
 function isPatientStatusResponse(value) {
   return isRecord16(value) && hasOnlyRecordKeys14(value, ["schemaVersion", "status"]) && value.schemaVersion === "1.0" && isPatientStatusView(value.status) && isIsoDateTime(value.status.freshness.checkedAtLabel);
@@ -24718,8 +24757,8 @@ function selfCareDecisionSeedPrimaryActionFor(seedState) {
     case "publication_recovery_required":
       return {
         commandName: "start-review",
-        label: "Recheck advice release",
-        helper: "Recover the live advice and access state before creating advice."
+        label: "Recheck advice readiness",
+        helper: "Recheck advice and access before creating advice."
       };
     case "recovery_required":
       return {
@@ -24760,7 +24799,7 @@ function selfCareDecisionSeedSummaryFor(seedState) {
     case "settlement_pending":
       return "The outcome has local progress, but advice creation waits for the final result.";
     case "publication_recovery_required":
-      return "Advice creation is held while the advice release path is rechecked.";
+      return "Advice creation is held while advice readiness is rechecked.";
     case "recovery_required":
       return "The decision view needs a recheck before self-care advice can continue.";
     case "blocked":
@@ -24780,7 +24819,7 @@ function selfCareBoundarySeparationFor(seedState) {
 function selfCareAdviceBundleLabelFor(seedState) {
   switch (seedState) {
     case "publication_recovery_required":
-      return "Last safe advice summary is preserved while release is recovered.";
+      return "Last safe advice summary is preserved while review is completed.";
     case "ready_to_seed":
     case "seeded":
       return "Approved public advice bundle and variant are current.";
@@ -24804,7 +24843,7 @@ function selfCarePatientSafeSummaryFor(seedState) {
     case "seeded":
       return "Patient-facing advice is recorded; final outcome remains the source of task status.";
     case "publication_recovery_required":
-      return "Last reviewed summary stays visible. Advice needs release and access checks.";
+      return "Last reviewed summary stays visible. Advice needs review and access checks.";
     case "approval_required":
       return "Approval needed before patient advice.";
     case "settlement_pending":
@@ -24822,7 +24861,7 @@ function selfCareSafetyNetLinesFor(seedState) {
   if (seedState === "publication_recovery_required") {
     return [
       "Use the last reviewed summary only as context.",
-      "Do not create advice until release and access checks recover.",
+      "Do not create advice until review and access checks are ready.",
       "Escalate or recheck if the patient needs more than informational advice."
     ];
   }
@@ -24870,7 +24909,7 @@ function selfCareSettlementLabelFor(endpointDecisionWorkspace, seedState) {
     return "Self-care advice is recorded; task outcome remains separate.";
   }
   if (seedState === "publication_recovery_required") {
-    return "Advice release must recover before advice creation.";
+    return "Advice checks must be ready before advice creation.";
   }
   return endpointDecisionWorkspace.settlement.summary;
 }
@@ -24885,7 +24924,7 @@ function selfCareLaunchReadinessFor(seedState) {
     case "settlement_pending":
       return "Waiting for the final result.";
     case "publication_recovery_required":
-      return "Recover advice release and template checks before creation.";
+      return "Recheck advice and template checks before creation.";
     case "recovery_required":
       return "Recheck the decision view before creating advice.";
     case "blocked":
@@ -24907,7 +24946,7 @@ function selfCareRoutePostureFor(seedState) {
     case "settlement_pending":
       return "Result check keeps self-care advice inactive.";
     case "publication_recovery_required":
-      return "Release checks keep self-care advice inactive.";
+      return "Review checks keep self-care advice inactive.";
     case "recovery_required":
       return "Recheck keeps self-care advice inactive.";
     case "blocked":
@@ -25110,8 +25149,8 @@ function adminResolutionSeedPrimaryActionFor(seedState) {
     case "publication_recovery_required":
       return {
         commandName: "start-review",
-        label: "Recheck release",
-        helper: "Recheck release and access before preparing administrative work."
+        label: "Recheck readiness",
+        helper: "Recheck readiness and access before preparing administrative work."
       };
     case "recovery_required":
       return {
@@ -25154,7 +25193,7 @@ function adminResolutionSeedSummaryFor(seedState) {
     case "settlement_pending":
       return "The outcome has local progress, but administrative work waits for the final result.";
     case "publication_recovery_required":
-      return "Administrative work is held while release and review checks recover.";
+      return "Administrative work is held while review and access checks recover.";
     case "recovery_required":
       return "The decision view needs a recheck before administrative resolution can continue.";
     case "blocked":
@@ -25192,7 +25231,7 @@ function adminResolutionPatientEffectFor(seedState) {
     case "follow_up_pending":
       return "Patient-visible effect stays pending while the administrative dependency is owned and tracked.";
     case "publication_recovery_required":
-      return "Patient-visible update needs release and review checks.";
+      return "Patient-visible update needs review and access checks.";
     case "settlement_pending":
       return "Patient-visible update waits for the final result before issue.";
     case "recovery_required":
@@ -25318,7 +25357,7 @@ function adminResolutionTaskSettlementLabelFor(seedState, endpointDecisionWorksp
     return "Task result is not enough to hide the pending administrative follow-up.";
   }
   if (seedState === "publication_recovery_required") {
-    return "Release checks must recover before administrative work continues.";
+    return "Review checks must be ready before administrative work continues.";
   }
   return endpointDecisionWorkspace.settlement.summary;
 }
@@ -25356,7 +25395,7 @@ function adminResolutionLaunchReadinessFor(seedState) {
     case "settlement_pending":
       return "Waiting for the final result.";
     case "publication_recovery_required":
-      return "Recheck release and review before administrative work continues.";
+      return "Recheck review and access before administrative work continues.";
     case "recovery_required":
       return "Recheck the decision view before creating administrative work.";
     case "blocked":
@@ -25380,7 +25419,7 @@ function adminResolutionRoutePostureFor(seedState) {
     case "settlement_pending":
       return "Result check keeps administrative work inactive.";
     case "publication_recovery_required":
-      return "Release and access checks keep administrative work inactive.";
+      return "Review and access checks keep administrative work inactive.";
     case "recovery_required":
       return "Recheck keeps administrative work inactive.";
     case "blocked":
@@ -28698,7 +28737,7 @@ async function registerPatientWebRoutes(app, dependencies) {
         throw new GatewayHttpError(400, "patient_conversation_reply_thread_mismatch", "Reply could not be matched to this conversation.");
       }
       const requestPublicId = requestPublicIdFromPatientConversationThreadId(request.params.threadId);
-      const readAuthority = requestPublicId === void 0 ? dependencies.patientWebSessionAuthService.requestReadAuthorityFromHeaders(request.headers, requestBinding) : dependencies.patientWebSessionAuthService.requireRequestReadAuthority(request.headers, requestBinding);
+      const readAuthority = dependencies.patientWebSessionAuthService.requestReadAuthorityFromHeaders(request.headers, requestBinding);
       const result = await dependencies.patientConversationReplyService.submitReply(request.params.threadId, body, readAuthority, requestBinding);
       if (result.statusCode !== 200 || !isPatientConversationReplyResponse(result.response)) {
         throw new GatewayHttpError(502, "patient_conversation_reply_invalid_response", "Reply response did not match the public contract.");
@@ -57495,6 +57534,16 @@ function isDemoPatientReadAuthorityBindingCompatible(subjectRef, authority) {
   }
   return demoPatient3.requestBinding.sessionRef === authority.requestBinding.sessionRef && demoPatient3.requestBinding.csrfToken === authority.requestBinding.csrfToken;
 }
+function isDemoPatientRequestBindingCompatible(subjectRef, requestBinding) {
+  if (subjectRef === void 0 || requestBinding === void 0) {
+    return false;
+  }
+  const demoPatient3 = demoPatientAccountBySubjectRef(subjectRef);
+  if (demoPatient3 === void 0) {
+    return false;
+  }
+  return demoPatient3.requestBinding.sessionRef === requestBinding.sessionRef && demoPatient3.requestBinding.csrfToken === requestBinding.csrfToken;
+}
 
 // services/api-gateway/src/services/patient-conversation-reply.service.ts
 var defaultNow4 = () => /* @__PURE__ */ new Date();
@@ -57525,9 +57574,9 @@ var PatientConversationReplyService = class {
     if (isClinicianPatientMessageThreadId(threadId) && patientMessageThread === void 0) {
       throw new GatewayHttpError(403, "patient_conversation_reply_authority_required", "This conversation link cannot send a reply.");
     }
-    const linkedIntakeReply = await this.linkedIntakeReplyContextFor(threadId, request, authority);
-    const replayStoreKey = replyReplayStoreKey(threadId, request.idempotencyKey, authority);
-    const requestFingerprint2 = replyRequestFingerprint(threadId, request, authority);
+    const linkedIntakeReply = await this.linkedIntakeReplyContextFor(threadId, request, authority, requestBinding);
+    const replayStoreKey = replyReplayStoreKey(threadId, request.idempotencyKey, authority, requestBinding);
+    const requestFingerprint2 = replyRequestFingerprint(threadId, request, authority, requestBinding);
     const existing = this.receiptsByIdempotencyKey.get(replayStoreKey);
     if (existing) {
       if (existing.requestFingerprint !== requestFingerprint2) {
@@ -57579,15 +57628,12 @@ var PatientConversationReplyService = class {
       }
     };
   }
-  async linkedIntakeReplyContextFor(threadId, request, authority) {
+  async linkedIntakeReplyContextFor(threadId, request, authority, requestBinding) {
     const requestPublicId = requestPublicIdFromPatientConversationThreadId(threadId);
     if (requestPublicId === void 0) {
       return void 0;
     }
     if (this.repository === void 0) {
-      throw new GatewayHttpError(403, "patient_conversation_reply_authority_required", "This conversation link cannot send a reply.");
-    }
-    if (authority === void 0) {
       throw new GatewayHttpError(403, "patient_conversation_reply_authority_required", "This conversation link cannot send a reply.");
     }
     if (!isLinkedIntakeReplyRouteBinding(threadId, requestPublicId, request)) {
@@ -57599,6 +57645,16 @@ var PatientConversationReplyService = class {
     }
     const promotionRecord = await this.repository.getSubmissionPromotionRecordByRequestPublicId(requestPublicId);
     const draftRecord = promotionRecord === void 0 ? void 0 : await this.repository.getByDraftPublicId(promotionRecord.draftPublicId);
+    if (authority === void 0) {
+      if (promotionRecord === void 0 || draftRecord === void 0 || !isDemoPatientRequestBindingCompatible(draftRecord.envelope.identityContext.subjectRef, requestBinding)) {
+        throw new GatewayHttpError(403, "patient_conversation_reply_authority_required", "This conversation link cannot send a reply.");
+      }
+      return {
+        draftRecord,
+        promotionRecord,
+        requestPublicId
+      };
+    }
     if (promotionRecord === void 0 || draftRecord === void 0 || draftRecord.resumeToken !== authority.resumeToken || !isDemoPatientReadAuthorityBindingCompatible(draftRecord.envelope.identityContext.subjectRef, authority)) {
       throw new GatewayHttpError(403, "patient_conversation_reply_authority_required", "This conversation link cannot send a reply.");
     }
@@ -57634,15 +57690,15 @@ var PatientConversationReplyService = class {
 function isLinkedIntakeReplyRouteBinding(threadId, requestPublicId, request) {
   return request.composerLeaseId === `patient-composer-lease:${threadId}` && request.activeSubthreadRef === `conversation-subthread:${requestPublicId}:more-info` && request.expectedRouteIntentBindingRef === `route-intent-binding:${threadId}` && request.expectedLineageFenceEpoch === `lineage-fence:${threadId}:1`;
 }
-function replyReplayStoreKey(threadId, idempotencyKey, authority) {
+function replyReplayStoreKey(threadId, idempotencyKey, authority, requestBinding) {
   return stableHash4([
     "patient-conversation-reply-replay",
     threadId,
     idempotencyKey,
-    replyAuthorityScopeRef(authority)
+    replyAuthorityScopeRef(authority, requestBinding)
   ]);
 }
-function replyRequestFingerprint(threadId, request, authority) {
+function replyRequestFingerprint(threadId, request, authority, requestBinding) {
   return stableHash4([
     "patient-conversation-reply-request",
     threadId,
@@ -57654,12 +57710,19 @@ function replyRequestFingerprint(threadId, request, authority) {
     request.idempotencyKey,
     request.expectedRouteIntentBindingRef,
     request.expectedLineageFenceEpoch,
-    replyAuthorityScopeRef(authority)
+    replyAuthorityScopeRef(authority, requestBinding)
   ]);
 }
-function replyAuthorityScopeRef(authority) {
+function replyAuthorityScopeRef(authority, requestBinding) {
   if (authority === void 0) {
-    return "patient-request-authority:none";
+    if (requestBinding === void 0) {
+      return "patient-request-authority:none";
+    }
+    return stableHash4([
+      "patient-request-binding-authority",
+      requestBinding.sessionRef,
+      requestBinding.csrfToken
+    ]);
   }
   return stableHash4([
     "patient-request-authority",
@@ -58157,13 +58220,13 @@ var PatientReceiptService = class {
     this.metricRecorder = options.metricRecorder;
     this.now = options.now ?? (() => /* @__PURE__ */ new Date());
   }
-  async getReceipt(requestPublicId, authority) {
+  async getReceipt(requestPublicId, authority, requestBinding) {
     const startedAt = gatewayNowEpochMs(this.now);
     if (!requestPublicIdPattern.test(requestPublicId)) {
       throw new PatientReceiptServiceError(404, "patient_receipt_not_found", "This request receipt could not be found.");
     }
     const storedEnvelope = await this.repository.getPatientReceiptEnvelopeByRequestPublicId(requestPublicId);
-    await this.assertReadAuthority(requestPublicId, authority);
+    await this.assertReadAuthority(requestPublicId, authority, requestBinding);
     const sourceBundle = await this.sourceBundleForReceipt(requestPublicId, storedEnvelope);
     const projection = this.patientProjectionBuilder(sourceBundle);
     const response = this.responseForProjection(projection);
@@ -58173,7 +58236,7 @@ var PatientReceiptService = class {
       response
     };
   }
-  async assertReadAuthority(requestPublicId, authority) {
+  async assertReadAuthority(requestPublicId, authority, requestBinding) {
     const promotionRecord = await this.repository.getSubmissionPromotionRecordByRequestPublicId(requestPublicId);
     if (promotionRecord === void 0) {
       if (authority !== void 0 && !resumeTokenPattern.test(authority.resumeToken)) {
@@ -58181,8 +58244,12 @@ var PatientReceiptService = class {
       }
       throw new PatientReceiptServiceError(404, "patient_receipt_not_found", "This request receipt could not be found.");
     }
+    const draftRecord = await this.repository.getByDraftPublicId(promotionRecord.draftPublicId);
     if (authority === void 0) {
       if (this.requireReadAuthorityForStoredRequests) {
+        if (isDemoPatientRequestBindingCompatible(draftRecord?.envelope.identityContext.subjectRef, requestBinding)) {
+          return;
+        }
         throw new PatientReceiptServiceError(403, "patient_receipt_authority_required", "This request receipt link cannot read the receipt.");
       }
       return;
@@ -58190,7 +58257,6 @@ var PatientReceiptService = class {
     if (!resumeTokenPattern.test(authority.resumeToken)) {
       throw new PatientReceiptServiceError(403, "patient_receipt_authority_required", "This request receipt link cannot read the receipt.");
     }
-    const draftRecord = await this.repository.getByDraftPublicId(promotionRecord.draftPublicId);
     if (draftRecord === void 0 || draftRecord.resumeToken !== authority.resumeToken || !isDemoPatientReadAuthorityBindingCompatible(draftRecord.envelope.identityContext.subjectRef, authority)) {
       throw new PatientReceiptServiceError(403, "patient_receipt_authority_required", "This request receipt link cannot read the receipt.");
     }
@@ -64463,7 +64529,7 @@ function pharmacyChoiceStateDetail(surfaceState) {
     case "read_only_provenance":
       return "The previous choice is shown while we check the latest details.";
     case "recovery_required":
-      return "This pharmacy page needs a check before new actions are available.";
+      return "This pharmacy request needs a check before anything changes.";
   }
 }
 function pharmacyProviderCards(pharmacyCaseId, selectedCardId, actionable) {
@@ -64562,8 +64628,8 @@ function pharmacyConsentCheckpointProjection(pharmacyCaseId, scenario2, selected
       return consentCheckpoint({
         pharmacyCaseId,
         checkpointState: "recovery_required",
-        title: "Consent is paused",
-        message: "We need to refresh this pharmacy step before new consent can be recorded.",
+        title: "Sharing is paused",
+        message: "Refresh this pharmacy step before sharing can continue.",
         consentSummary: "Your previous pharmacy choice stays visible while we check the latest details.",
         selectedProviderName,
         requiresWarningAcknowledgement: false,
@@ -64875,7 +64941,7 @@ function pharmacyStatusMessage(truthState, selectedProviderName) {
     case "revoked_consent":
       return "The referral is paused while the practice reviews the consent change.";
     case "recovery_only":
-      return "This pharmacy request needs a check before new status actions are available.";
+      return "This pharmacy request needs a check before anything changes.";
   }
 }
 function pharmacyStatusAssuranceLabel(truthState) {
@@ -65055,7 +65121,7 @@ function pharmacyStatusNextStep(pharmacyCaseId, truthState, selectedProvider) {
       return nextStep("Follow urgent advice", "The practice needs to review this urgently. Do not wait on this page if symptoms are getting worse.", "Seek urgent care if needed now.", "Use emergency or urgent care options if symptoms worsen.", action4("Get urgent advice", "/start", "caution", "Open the urgent safety guidance."));
     case "stale_continuity":
     case "recovery_only":
-      return nextStep("Refresh pharmacy status", "Your previous pharmacy choice stays visible while we check the latest status.", "New pharmacy actions wait until this status refreshes.", "Use urgent care if symptoms worsen.", action4("Refresh pharmacy status", statusHref, "supportive", "Reload the latest pharmacy status."));
+      return nextStep("Refresh pharmacy status", "Your previous pharmacy choice stays visible while we check the latest status.", "We will show the next step after this status refreshes.", "Use urgent care if symptoms worsen.", action4("Refresh pharmacy status", statusHref, "supportive", "Reload the latest pharmacy status."));
     case "revoked_consent":
       return nextStep("Wait for consent review", "The practice is checking what can be changed after consent was withdrawn.", "No further pharmacy action is available right now.", "Use urgent care if symptoms worsen.", action4("Check status", statusHref, "supportive", "Check whether the consent review has changed."));
   }
@@ -65180,7 +65246,7 @@ function pharmacyRecoveryProjection(pharmacyCaseId, scenario2, selectedProvider)
       return recoveryProjection({
         recoveryState: "route_recovery_required",
         title: "Pharmacy choice needs a check",
-        message: "This page cannot show new pharmacy actions until the latest details are checked.",
+        message: "This page needs the latest pharmacy details before anything changes.",
         reasons: ["The pharmacy referral could not be confirmed"],
         readOnlyProvenanceLabel: null,
         ...common
@@ -67892,13 +67958,13 @@ var PatientStatusService = class {
     this.patientProjectionBuilder = options.patientProjectionBuilder ?? buildIntakePatientProjection;
     this.metricRecorder = options.metricRecorder;
   }
-  async getStatus(requestPublicId, authority) {
+  async getStatus(requestPublicId, authority, requestBinding) {
     const startedAt = gatewayNowEpochMs(this.now);
     if (!requestPublicIdPattern2.test(requestPublicId)) {
       throw new PatientStatusServiceError(404, "patient_status_not_found", "This request status could not be found.");
     }
-    await this.assertReadAuthority(requestPublicId, authority);
-    const projection = this.patientProjectionBuilder(await this.sourceBundleForStatus(requestPublicId, authority));
+    await this.assertReadAuthority(requestPublicId, authority, requestBinding);
+    const projection = this.patientProjectionBuilder(await this.sourceBundleForStatus(requestPublicId, authority, requestBinding));
     const response = this.responseForProjection(projection);
     this.recordStatusMetric(gatewayElapsedMs(this.now, startedAt));
     return {
@@ -67906,7 +67972,7 @@ var PatientStatusService = class {
       response
     };
   }
-  async assertReadAuthority(requestPublicId, authority) {
+  async assertReadAuthority(requestPublicId, authority, requestBinding) {
     const promotionRecord = await this.repository.getSubmissionPromotionRecordByRequestPublicId(requestPublicId);
     if (promotionRecord === void 0) {
       if (authority !== void 0 && !resumeTokenPattern2.test(authority.resumeToken)) {
@@ -67914,8 +67980,12 @@ var PatientStatusService = class {
       }
       throw new PatientStatusServiceError(404, "patient_status_not_found", "This request status could not be found.");
     }
+    const draftRecord = await this.repository.getByDraftPublicId(promotionRecord.draftPublicId);
     if (authority === void 0) {
       if (this.requireReadAuthorityForStoredRequests) {
+        if (isDemoPatientRequestBindingCompatible(draftRecord?.envelope.identityContext.subjectRef, requestBinding)) {
+          return;
+        }
         throw new PatientStatusServiceError(403, "patient_status_authority_required", "This request status link cannot read the status.");
       }
       return;
@@ -67923,7 +67993,6 @@ var PatientStatusService = class {
     if (!resumeTokenPattern2.test(authority.resumeToken)) {
       throw new PatientStatusServiceError(403, "patient_status_authority_required", "This request status link cannot read the status.");
     }
-    const draftRecord = await this.repository.getByDraftPublicId(promotionRecord.draftPublicId);
     if (draftRecord === void 0 || draftRecord.resumeToken !== authority.resumeToken || !isDemoPatientReadAuthorityBindingCompatible(draftRecord.envelope.identityContext.subjectRef, authority)) {
       throw new PatientStatusServiceError(403, "patient_status_authority_required", "This request status link cannot read the status.");
     }
@@ -67942,8 +68011,8 @@ var PatientStatusService = class {
       recordedAt: gatewayClockIso(this.now)
     });
   }
-  async sourceBundleForStatus(requestPublicId, authority) {
-    const receipt = await this.getAuthoritativeReceipt(requestPublicId, authority);
+  async sourceBundleForStatus(requestPublicId, authority, requestBinding) {
+    const receipt = await this.getAuthoritativeReceipt(requestPublicId, authority, requestBinding);
     const promotionRecord = await this.repository.getSubmissionPromotionRecordByRequestPublicId(requestPublicId);
     const draftRecord = promotionRecord === void 0 ? void 0 : await this.repository.getByDraftPublicId(promotionRecord.draftPublicId);
     return {
@@ -67962,13 +68031,13 @@ var PatientStatusService = class {
       status: projection.status
     };
   }
-  async getAuthoritativeReceipt(requestPublicId, authority) {
+  async getAuthoritativeReceipt(requestPublicId, authority, requestBinding) {
     const storedReceipt = await this.repository.getPatientReceiptEnvelopeByRequestPublicId(requestPublicId);
     if (storedReceipt !== void 0) {
       return storedReceipt;
     }
     try {
-      await this.receiptService.getReceipt(requestPublicId, authority);
+      await this.receiptService.getReceipt(requestPublicId, authority, requestBinding);
     } catch (error) {
       const statusCode = typeof error === "object" && error !== null && "statusCode" in error ? error.statusCode : void 0;
       if (statusCode === 404) {
@@ -68607,7 +68676,8 @@ var PatientRouteProjectionService = class {
       try {
         const result = await this.patientReceiptService.getReceipt(
           requestPublicId,
-          authority
+          authority,
+          requestBinding
         );
         return adaptPatientReceiptProjection(result.response, route, projectionContext);
       } catch (error) {
@@ -68622,7 +68692,8 @@ var PatientRouteProjectionService = class {
       try {
         const result = await this.patientStatusService.getStatus(
           requestPublicId,
-          authority
+          authority,
+          requestBinding
         );
         return adaptPatientStatusProjection(result.response, route, projectionContext);
       } catch (error) {
@@ -68635,7 +68706,7 @@ var PatientRouteProjectionService = class {
       let liveRequestStatus;
       if (requestPublicId !== void 0) {
         try {
-          liveRequestStatus = (await this.patientStatusService.getStatus(requestPublicId, authority)).response.status;
+          liveRequestStatus = (await this.patientStatusService.getStatus(requestPublicId, authority, requestBinding)).response.status;
         } catch (error) {
           return this.fallbackProjectionOrThrow(error, route, "patient_conversation_projection_unavailable", projectionContext);
         }

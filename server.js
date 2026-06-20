@@ -20574,7 +20574,7 @@ var demoClinicianAccounts = [
       baseAddressLines: ["Colchester Medical Practice", "Castle Road", "Colchester"],
       postcode: "ZZ1 1CP",
       workingHoursLabel: "Monday to Friday, 08:30-17:00",
-      profileImage: demoProfileImage("/demo-profiles/clinician-colchester.svg", "Dr Johny profile placeholder")
+      profileImage: demoProfileImage("/demo-profiles/staff_raza.png", "Dr Johny profile photo")
     })
   },
   {
@@ -29317,7 +29317,7 @@ var demoClinicianAccounts2 = [
       baseAddressLines: ["Colchester Medical Practice", "Castle Road", "Colchester"],
       postcode: "ZZ1 1CP",
       workingHoursLabel: "Monday to Friday, 08:30-17:00",
-      profileImage: demoProfileImage2("/demo-profiles/clinician-colchester.svg", "Dr Johny profile placeholder")
+      profileImage: demoProfileImage2("/demo-profiles/staff_raza.png", "Dr Johny profile photo")
     })
   },
   {
@@ -71837,7 +71837,7 @@ var PatientRouteProjectionService = class {
         return void 0;
       }
     }));
-    return statusCandidates.filter((status) => status !== void 0 && (status.state === "awaiting_patient_reply" || status.state === "patient_reply_received")).sort((left, right) => right.requestPublicId.localeCompare(left.requestPublicId));
+    return statusCandidates.filter((status) => status !== void 0 && (status.state === "awaiting_patient_reply" || status.state === "patient_reply_received")).sort(compareLiveRequestConversationStatus);
   }
   liveRequestConversationProjection(status, context) {
     const threadId = patientConversationThreadIdForRequest(status.requestPublicId);
@@ -71863,7 +71863,7 @@ var PatientRouteProjectionService = class {
       previewDigest,
       groups: inbox.groups.filter((group) => group.clusterRefs.includes(cluster.clusterId)),
       receiptEnvelopes: inbox.receiptEnvelopes.filter((receipt) => receipt.threadId === threadId),
-      urgentDiversionStates: inbox.urgentDiversionStates.filter((state) => state.threadId === threadId)
+      urgentDiversionStates: inbox.urgentDiversionStates.filter((state) => state.clusterRef === cluster.clusterId)
     };
   }
   projectionWithPatientAccountProfile(projection, requestBinding) {
@@ -71930,12 +71930,20 @@ var PatientRouteProjectionService = class {
 function patientReceiptNeedsLiveConversation(receiptEnvelope) {
   return receiptEnvelope?.recoveryReasonRef === "receipt-recovery:awaiting-more-info" || receiptEnvelope?.recoveryReasonRef === "receipt-recovery:patient-reply-received";
 }
+function compareLiveRequestConversationStatus(left, right) {
+  const priorityDifference = liveRequestConversationPriority(left) - liveRequestConversationPriority(right);
+  return priorityDifference === 0 ? right.requestPublicId.localeCompare(left.requestPublicId) : priorityDifference;
+}
+function liveRequestConversationPriority(status) {
+  return status.state === "awaiting_patient_reply" ? 0 : 1;
+}
 function projectionWithLiveRequestConversationInboxThreads(projection, liveProjections) {
   const inbox = projection.patientConversationInbox;
   if (inbox === void 0 || liveProjections.length === 0) {
     return projection;
   }
   const liveThreadIds = new Set(liveProjections.map((liveProjection) => liveProjection.thread.threadId));
+  const liveClusterIds = new Set(liveProjections.map((liveProjection) => liveProjection.cluster.clusterId));
   const selected = liveProjections[0];
   if (selected === void 0) {
     return projection;
@@ -71962,7 +71970,7 @@ function projectionWithLiveRequestConversationInboxThreads(projection, liveProje
   ];
   const urgentDiversionStates = [
     ...liveProjections.flatMap((liveProjection) => liveProjection.urgentDiversionStates),
-    ...inbox.urgentDiversionStates.filter((state) => !liveThreadIds.has(state.threadId))
+    ...inbox.urgentDiversionStates.filter((state) => !liveClusterIds.has(state.clusterRef))
   ];
   const unreadTotal = previewDigests.reduce((total, digest) => total + digest.unreadCount, 0);
   const replyNeededCount = previewDigests.filter((digest) => digest.replyNeededState === "reply_needed").length;

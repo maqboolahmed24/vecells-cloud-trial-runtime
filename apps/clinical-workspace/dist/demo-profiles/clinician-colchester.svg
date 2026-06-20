@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" role="img" aria-label="Dr Johny profile placeholder">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150" role="img" aria-label="Dr Colchester Taylor profile image">
   <rect width="150" height="150" rx="75" fill="#eef6f8"/>
   <circle cx="75" cy="58" r="30" fill="#0b4f6c"/>
   <path d="M30 132c7-26 24-41 45-41s38 15 45 41" fill="#0f766e"/>
@@ -7,5 +7,5 @@
   <circle cx="86" cy="53" r="4" fill="#dbeafe"/>
   <circle cx="114" cy="106" r="10" fill="#ffffff" stroke="#0b4f6c" stroke-width="4"/>
   <path d="M103 103c-17-5-17-23-17-31" fill="none" stroke="#0b4f6c" stroke-width="5" stroke-linecap="round"/>
-  <text x="75" y="132" fill="#ffffff" font-family="Arial, sans-serif" font-size="30" font-weight="700" text-anchor="middle">DJ</text>
+  <text x="75" y="132" fill="#ffffff" font-family="Arial, sans-serif" font-size="30" font-weight="700" text-anchor="middle">CT</text>
 </svg>

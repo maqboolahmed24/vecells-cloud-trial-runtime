@@ -27255,6 +27255,9 @@ function isPatientRequestPublicRouteParam(value) {
 function isPatientSecureLinkRouteParam(value) {
   return typeof value === "string" && value.length > 0 && value.length <= 255 && /^[A-Za-z0-9][A-Za-z0-9._~-]{0,254}$/u.test(value);
 }
+function isPatientConversationThreadRouteParam(value) {
+  return typeof value === "string" && value.length > 0 && value.length <= 120 && /^[A-Za-z0-9][A-Za-z0-9._:-]{0,119}$/u.test(value);
+}
 function isPatientRoutePathBoundToParams(key, path, params) {
   if (key === "requestReceipt") {
     const requestPublicId = params.requestPublicId;
@@ -27263,6 +27266,10 @@ function isPatientRoutePathBoundToParams(key, path, params) {
   if (key === "status") {
     const trackingRef = params.trackingRef;
     return isPatientRequestPublicRouteParam(trackingRef) && path === `/status/${encodeURIComponent(trackingRef)}`;
+  }
+  if (key === "messageThread") {
+    const threadId = params.threadId;
+    return isPatientConversationThreadRouteParam(threadId) && path === `/messages/${encodeURIComponent(threadId)}`;
   }
   if (key === "secureLink") {
     const secureLinkToken = params.secureLinkToken;
@@ -71272,7 +71279,11 @@ var PatientRouteProjectionService = class {
     if (route.key !== "messages" && route.key !== "messageThread") {
       return projection;
     }
+    const demoPatient3 = demoPatientAccountForBinding(requestBinding);
     const threads = this.demoPatientMessageService?.threadsForPatientBinding(requestBinding) ?? [];
+    if (demoPatient3 !== void 0 && threads.length === 0) {
+      return projectionWithEmptyDemoPatientMessageInbox(projection);
+    }
     return projectionWithDemoClinicianMessageThreads(projection, route, threads);
   }
   projectionWithPatientAccountProfile(projection, requestBinding) {
@@ -71340,11 +71351,15 @@ function isAppointmentManageRouteKey(routeKey) {
   return routeKey === "appointmentDetail" || routeKey === "appointmentManage" || routeKey === "appointmentCancel" || routeKey === "appointmentReschedule";
 }
 var cleanStartDemoPatientIds = /* @__PURE__ */ new Set(["amjad", "george", "humdan"]);
-function cleanStartDemoPatientAccountForBinding(requestBinding) {
+function demoPatientAccountForBinding(requestBinding) {
   if (requestBinding === void 0) {
     return void 0;
   }
-  return demoPatientAccounts2.find((account) => cleanStartDemoPatientIds.has(account.patientId) && account.requestBinding.sessionRef === requestBinding.sessionRef && account.requestBinding.csrfToken === requestBinding.csrfToken);
+  return demoPatientAccounts2.find((account) => account.requestBinding.sessionRef === requestBinding.sessionRef && account.requestBinding.csrfToken === requestBinding.csrfToken);
+}
+function cleanStartDemoPatientAccountForBinding(requestBinding) {
+  const account = demoPatientAccountForBinding(requestBinding);
+  return account !== void 0 && cleanStartDemoPatientIds.has(account.patientId) ? account : void 0;
 }
 function projectionWithCleanStartDemoPatient(projection, requestBinding) {
   if (cleanStartDemoPatientAccountForBinding(requestBinding) === void 0) {
@@ -71605,6 +71620,19 @@ function cleanStartConversationInboxWithClinicianThreads(inbox, clinicianThreadI
 function hasClinicianPatientMessages(inbox) {
   return inbox.threadProjections.some((thread) => isClinicianPatientMessageThreadId(thread.threadId));
 }
+function projectionWithEmptyDemoPatientMessageInbox(projection) {
+  if (projection.patientConversationInbox === void 0) {
+    return projection;
+  }
+  const patientConversationInbox = cleanStartConversationInbox(projection.patientConversationInbox);
+  return {
+    ...projection,
+    pageTitle: "Messages",
+    summary: "Messages from the practice will appear here.",
+    primaryAction: patientConversationInbox.dominantNextAction,
+    patientConversationInbox
+  };
+}
 function cleanStartAction(source, tone) {
   return {
     ...source,
@@ -71758,36 +71786,23 @@ function projectionWithDemoClinicianMessageThreads(projection, route, demoThread
     return projection;
   }
   const demoFixtures = demoThreads.map(demoClinicianMessageFixture);
-  const demoThreadIds = new Set(demoFixtures.map((fixture) => fixture.thread.threadId));
   const requestedThreadId = route.key === "messageThread" ? route.params.threadId : void 0;
-  const selectedDemo = demoFixtures.find((fixture) => fixture.thread.threadId === requestedThreadId) ?? (route.key === "messages" ? demoFixtures[0] : void 0);
-  const selectedThread = selectedDemo?.thread ?? inbox.selectedThread;
-  const clusters = [
-    ...demoFixtures.map((fixture) => fixture.cluster),
-    ...inbox.clusters.filter((cluster) => !demoThreadIds.has(cluster.threadId))
-  ];
-  const previewDigests = [
-    ...demoFixtures.map((fixture) => fixture.previewDigest),
-    ...inbox.previewDigests.filter((digest) => !demoThreadIds.has(digest.threadId))
-  ];
-  const threadProjections = [
-    ...demoFixtures.map((fixture) => fixture.thread),
-    ...inbox.threadProjections.filter((thread) => !demoThreadIds.has(thread.threadId))
-  ];
-  const receiptEnvelopes = [
-    ...demoFixtures.flatMap((fixture) => fixture.receipts),
-    ...inbox.receiptEnvelopes.filter((receipt) => !demoThreadIds.has(receipt.threadId))
-  ];
-  const groups = [
-    ...demoFixtures.map((fixture) => ({
-      groupRef: fixture.thread.groupRef,
-      groupLabel: fixture.thread.groupLabel,
-      groupedBy: "governing_request",
-      clusterRefs: [fixture.cluster.clusterId],
-      unreadCount: fixture.previewDigest.unreadCount
-    })),
-    ...inbox.groups.filter((group) => !demoFixtures.some((fixture) => fixture.thread.groupRef === group.groupRef))
-  ];
+  const selectedDemo = demoFixtures.find((fixture) => fixture.thread.threadId === requestedThreadId) ?? demoFixtures[0];
+  if (selectedDemo === void 0) {
+    return projection;
+  }
+  const selectedThread = selectedDemo.thread;
+  const clusters = demoFixtures.map((fixture) => fixture.cluster);
+  const previewDigests = demoFixtures.map((fixture) => fixture.previewDigest);
+  const threadProjections = demoFixtures.map((fixture) => fixture.thread);
+  const receiptEnvelopes = demoFixtures.flatMap((fixture) => fixture.receipts);
+  const groups = demoFixtures.map((fixture) => ({
+    groupRef: fixture.thread.groupRef,
+    groupLabel: fixture.thread.groupLabel,
+    groupedBy: "governing_request",
+    clusterRefs: [fixture.cluster.clusterId],
+    unreadCount: fixture.previewDigest.unreadCount
+  }));
   const unreadTotal = previewDigests.reduce((total, digest) => total + digest.unreadCount, 0);
   const replyNeededCount = previewDigests.filter((digest) => digest.replyNeededState === "reply_needed").length;
   const awaitingReviewCount = previewDigests.filter((digest) => digest.awaitingReviewState === "awaiting_review").length;
@@ -71813,11 +71828,9 @@ function projectionWithDemoClinicianMessageThreads(projection, route, demoThread
   };
   return {
     ...projection,
-    ...selectedDemo === void 0 ? {} : {
-      pageTitle: selectedThread.groupLabel,
-      summary: selectedDemo.previewDigest.safePreviewSummary,
-      primaryAction: selectedThread.dominantNextAction
-    },
+    pageTitle: selectedThread.groupLabel,
+    summary: selectedDemo.previewDigest.safePreviewSummary,
+    primaryAction: selectedThread.dominantNextAction,
     patientConversationInbox: nextInbox
   };
 }

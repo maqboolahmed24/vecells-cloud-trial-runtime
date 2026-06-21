@@ -52948,7 +52948,8 @@ function normalizeIntakeDraftRepositorySnapshot(value) {
       patchRequestFingerprintByIdempotency: value.records.patchRequestFingerprintByIdempotency ?? [],
       attachmentInitiationRequestFingerprintByIdempotency: value.records.attachmentInitiationRequestFingerprintByIdempotency ?? [],
       attachmentCompletionRequestFingerprintByIdempotency: value.records.attachmentCompletionRequestFingerprintByIdempotency ?? [],
-      submitRequestFingerprintByIdempotency: value.records.submitRequestFingerprintByIdempotency ?? []
+      submitRequestFingerprintByIdempotency: value.records.submitRequestFingerprintByIdempotency ?? [],
+      simulatedUploadsByAttachmentId: []
     }
   };
 }
@@ -73135,6 +73136,7 @@ import pg from "pg";
 var defaultSnapshotKey = "api-gateway:intake-draft-repository:v1";
 var PostgresIntakeDraftRepository = class extends InMemoryIntakeDraftRepository {
   store;
+  transientSimulatedUploadsByAttachmentId = /* @__PURE__ */ new Map();
   operationQueue = Promise.resolve();
   constructor(options) {
     super();
@@ -73276,10 +73278,11 @@ var PostgresIntakeDraftRepository = class extends InMemoryIntakeDraftRepository 
     return this.withRepository(false, async () => super.getAttachmentManifest(manifestRef));
   }
   async saveSimulatedAttachmentUpload(upload) {
-    await this.withRepository(true, async () => super.saveSimulatedAttachmentUpload(upload));
+    this.transientSimulatedUploadsByAttachmentId.set(uploadKey(upload.draftPublicId, upload.attachmentPublicId), cloneSimulatedUpload(upload));
   }
   async getSimulatedAttachmentUpload(draftPublicId, attachmentPublicId) {
-    return this.withRepository(false, async () => super.getSimulatedAttachmentUpload(draftPublicId, attachmentPublicId));
+    const upload = this.transientSimulatedUploadsByAttachmentId.get(uploadKey(draftPublicId, attachmentPublicId));
+    return upload === void 0 ? void 0 : cloneSimulatedUpload(upload);
   }
   async getDraftMutationRecordById(mutationRecordId) {
     return this.withRepository(false, async () => super.getDraftMutationRecordById(mutationRecordId));
